@@ -776,6 +776,11 @@ tailwind.config = {
     <div id="group-assign-content" class="flex-grow overflow-y-auto no-scroll p-5"></div>
     <!-- Footer buttons -->
     <div class="p-5 border-t border-surface-container-high flex flex-col gap-2 flex-shrink-0">
+      <!-- Party total -->
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-body font-semibold text-on-surface-variant">Party Total</span>
+        <span id="group-party-total" class="text-2xl font-headline font-extrabold text-primary">$0.00</span>
+      </div>
       <div class="flex gap-2">
         <button onclick="saveGroupAssignments()" class="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-on-primary py-3 rounded-xl font-headline font-bold tracking-tight transition-all">Save All</button>
         <button id="group-advance-btn" onclick="saveGroupAndAdvance()" class="flex-1 bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold tracking-tight transition-all flex items-center justify-center gap-2">
@@ -1248,18 +1253,29 @@ function addGuestCard() {
 
 function toggleSameContact(idx) {
   const cb = document.getElementById(`same-contact-${idx}`);
-  const contactFields = document.getElementById(`contact-fields-${idx}`);
+  const box = document.getElementById(`same-contact-box-${idx}`);
+  const checkIcon = document.getElementById(`same-contact-check-${idx}`);
+  const contactFields = document.getElementById(`manual-contact-fields-${idx}`);
   const firstOnlyFields = document.getElementById(`first-only-fields-${idx}`);
-  const checkIcon = document.querySelector(`#same-contact-label-${idx} .peer-checked-icon`);
+
+  // Toggle checkbox state
+  cb.checked = !cb.checked;
 
   if (cb.checked) {
+    // Checked state
+    box.style.background = '#1a5252';
+    box.style.borderColor = '#1a5252';
+    checkIcon.classList.remove('hidden');
     contactFields.classList.add('hidden');
     firstOnlyFields.classList.remove('hidden');
-    if (checkIcon) checkIcon.classList.remove('hidden');
   } else {
+    // Unchecked state
+    box.style.background = 'transparent';
+    box.style.borderColor = '';
+    box.style.borderColor = '#7a858a';
+    checkIcon.classList.add('hidden');
     contactFields.classList.remove('hidden');
     firstOnlyFields.classList.add('hidden');
-    if (checkIcon) checkIcon.classList.add('hidden');
   }
 }
 
@@ -1710,13 +1726,11 @@ function renderManualGuestCard(idx) {
     </div>
 
     ${!isPrimary ? `
-    <label class="flex items-center gap-2 cursor-pointer" id="manual-same-label-${idx}">
-      <div class="relative">
-        <input type="checkbox" id="manual-same-${idx}" onchange="toggleManualSameContact(${idx})" class="sr-only peer">
-        <div class="w-5 h-5 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
-          <span class="material-symbols-outlined text-on-primary hidden" id="manual-check-icon-${idx}" style="font-size:13px;font-variation-settings:'FILL' 1,'wght' 600">check</span>
-        </div>
+    <label class="flex items-center gap-2 cursor-pointer" id="manual-same-label-${idx}" onclick="toggleManualSameContact(${idx})">
+      <div id="manual-same-box-${idx}" class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center flex-shrink-0 transition-all" style="background:transparent">
+        <span class="material-symbols-outlined hidden" id="manual-check-icon-${idx}" style="font-size:14px;color:#ffffff;font-variation-settings:'FILL' 1,'wght' 700">check</span>
       </div>
+      <input type="checkbox" id="manual-same-${idx}" class="hidden">
       <span class="text-sm font-body text-on-surface-variant">Same contact info as primary guest</span>
     </label>` : ''}
 
@@ -1761,17 +1775,23 @@ function renderManualGuestCard(idx) {
 
 function toggleManualSameContact(idx) {
   const cb = document.getElementById(`manual-same-${idx}`);
+  const box = document.getElementById(`manual-same-box-${idx}`);
+  const checkIcon = document.getElementById(`manual-check-icon-${idx}`);
   const contactFields = document.getElementById(`manual-contact-fields-${idx}`);
   const firstOnlyFields = document.getElementById(`manual-firstonly-fields-${idx}`);
-  const checkIcon = document.getElementById(`manual-check-icon-${idx}`);
+
+  cb.checked = !cb.checked;
+
   if (cb.checked) {
-    contactFields.classList.add('hidden');
-    firstOnlyFields.classList.remove('hidden');
+    if (box) { box.style.background = '#1a5252'; box.style.borderColor = '#1a5252'; }
     if (checkIcon) checkIcon.classList.remove('hidden');
+    if (contactFields) contactFields.classList.add('hidden');
+    if (firstOnlyFields) firstOnlyFields.classList.remove('hidden');
   } else {
-    contactFields.classList.remove('hidden');
-    firstOnlyFields.classList.add('hidden');
+    if (box) { box.style.background = 'transparent'; box.style.borderColor = '#7a858a'; }
     if (checkIcon) checkIcon.classList.add('hidden');
+    if (contactFields) contactFields.classList.remove('hidden');
+    if (firstOnlyFields) firstOnlyFields.classList.add('hidden');
   }
 }
 
@@ -3047,6 +3067,8 @@ function saveCurrentGroupTabInputs() {
   }));
   entry.services = entry.assignments.map(a => a.serviceId);
   entry.totalCost = entry.assignments.reduce((a, b) => a + b.cost, 0);
+  // Refresh party total display after save
+  setTimeout(updateGroupTotal, 0);
 }
 
 function renderGroupAssignContent() {
@@ -3147,10 +3169,22 @@ function toggleGroupService(sid) {
 }
 
 function updateGroupTotal() {
+  // Current tab subtotal
   const costs = [...document.querySelectorAll('#group-assign-content .assign-cost')].map(i => parseFloat(i.value) || 0);
-  const total = costs.reduce((a, b) => a + b, 0);
-  const el = document.getElementById('group-subtotal');
-  if (el) el.textContent = `$${total.toFixed(2)}`;
+  const subtotal = costs.reduce((a, b) => a + b, 0);
+  const subtotalEl = document.getElementById('group-subtotal');
+  if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+
+  // Party total — sum saved totals for all tabs except current (which uses live inputs)
+  const currentId = groupAssignEntries[activeGroupTab];
+  let partyTotal = subtotal;
+  groupAssignEntries.forEach((id, i) => {
+    if (i === activeGroupTab) return; // already counted above
+    const e = queue.find(x => String(x.id) === id);
+    if (e) partyTotal += (e.totalCost || 0);
+  });
+  const partyEl = document.getElementById('group-party-total');
+  if (partyEl) partyEl.textContent = `$${partyTotal.toFixed(2)}`;
 }
 
 function closeGroupAssignModal() {
