@@ -13,26 +13,26 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        primary: "#2a6868",
-        "primary-dim": "#1a5c5c",
-        "primary-container": "#b0eeed",
-        "on-primary": "#e0fffe",
-        "on-primary-container": "#185b5a",
-        secondary: "#785a1a",
-        "secondary-container": "#ffdea5",
-        "on-secondary-container": "#694d0c",
-        surface: "#f8f9fa",
-        "surface-container-lowest": "#ffffff",
-        "surface-container-low": "#f1f4f5",
-        "surface-container": "#ebeef0",
-        "surface-container-high": "#e5e9eb",
-        "surface-container-highest": "#dee3e6",
-        "on-surface": "#2d3335",
-        "on-surface-variant": "#5a6062",
-        outline: "#767c7e",
-        "outline-variant": "#adb3b5",
-        error: "#a83836",
-        "error-container": "#fa746f",
+        primary: "#1a5252",
+        "primary-dim": "#0f3d3d",
+        "primary-container": "#8fd4d3",
+        "on-primary": "#ffffff",
+        "on-primary-container": "#0a2e2e",
+        secondary: "#5c4010",
+        "secondary-container": "#f5c870",
+        "on-secondary-container": "#3a2800",
+        surface: "#e8ecee",
+        "surface-container-lowest": "#f5f7f8",
+        "surface-container-low": "#dde2e5",
+        "surface-container": "#d0d6da",
+        "surface-container-high": "#c2cacd",
+        "surface-container-highest": "#b4bec2",
+        "on-surface": "#000000",
+        "on-surface-variant": "#1a1a1a",
+        outline: "#4a5258",
+        "outline-variant": "#7a858a",
+        error: "#8b1c1a",
+        "error-container": "#e85a57",
       },
       fontFamily: {
         headline: ["Manrope"],
@@ -87,29 +87,46 @@ tailwind.config = {
   .fade-up { animation: fadeUp 0.4s ease forwards; }
 
   /* Status badges */
-  .badge-waiting { background: #ffdea5; color: #694d0c; }
-  .badge-inservice { background: #b0eeed; color: #185b5a; }
-  .badge-done { background: #dee3e6; color: #5a6062; }
-  .badge-appointment { background: #2a6868; color: #e0fffe; }
+  .badge-waiting { background: #f5c870; color: #3a2800; }
+  .badge-inservice { background: #8fd4d3; color: #0a2e2e; }
+  .badge-done { background: #b4bec2; color: #000000; }
+  .badge-appointment { background: #1a5252; color: #ffffff; }
+
+  /* Dashboard top nav tabs */
+  .dash-tab { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a; transition:background 0.15s; border:none; background:transparent; white-space:nowrap; }
+  .dash-tab:hover { background:#d0d6da; }
+  .dash-tab.active { background:#1a5252; color:#ffffff; }
+  .dash-tab.active .material-symbols-outlined { color:#ffffff; }
+
+  /* Report range buttons */
+  .rng-btn.active { background:#1a5252 !important; color:#ffffff !important; }
+
+  /* Queue action buttons — large touch targets */
+  .q-action-btn { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; border:none; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
+  .q-action-btn:active { transform:scale(0.92); }
+
+  /* Dashboard panels */
+  .dash-panel { display:none; }
+  .dash-panel.active { display:block; }
 
   /* Autocomplete dropdown */
   .autocomplete-list {
     position: absolute; z-index: 200;
-    background: #ffffff; border: 1px solid #e5e9eb;
-    border-radius: 0.75rem; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    background: #f5f7f8; border: 1px solid #c2cacd;
+    border-radius: 0.75rem; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     max-height: 220px; overflow-y: auto;
     width: 100%; top: calc(100% + 4px); left: 0;
   }
   .autocomplete-item {
     padding: 10px 14px; cursor: pointer;
     font-family: 'Inter', sans-serif; font-size: 14px;
-    color: #2d3335; transition: background 0.1s;
-    border-bottom: 1px solid #f1f4f5;
+    color: #000000; transition: background 0.1s;
+    border-bottom: 1px solid #dde2e5;
   }
   .autocomplete-item:last-child { border-bottom: none; }
-  .autocomplete-item:hover { background: #f1f4f5; }
-  .autocomplete-item .ac-name { font-weight: 600; font-family: 'Manrope', sans-serif; }
-  .autocomplete-item .ac-phone { font-size: 11px; color: #767c7e; margin-top: 1px; }
+  .autocomplete-item:hover { background: #dde2e5; }
+  .autocomplete-item .ac-name { font-weight: 600; font-family: 'Manrope', sans-serif; color:#000; }
+  .autocomplete-item .ac-phone { font-size: 11px; color: #4a5258; margin-top: 1px; }
   .ac-input-wrap { position: relative; }
 
   /* Square sync indicator */
@@ -162,12 +179,12 @@ tailwind.config = {
   <div class="w-full max-w-md flex flex-col gap-5 fade-up" style="animation-delay:0.1s">
 
     <button onclick="goTo('screen-checkin', 'walkin')"
-      class="group flex items-center justify-between w-full px-8 py-7 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 active:scale-[0.98]">
+      class="group flex items-center justify-between w-full px-8 py-7 rounded-xl bg-primary bg-gradient-to-br from-primary to-primary-dim shadow-xl shadow-primary/20 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]">
       <div class="flex flex-col items-start text-left">
-        <span class="text-[10px] font-headline font-bold tracking-widest text-secondary uppercase mb-1">No Appointment</span>
-        <span class="text-2xl font-headline font-bold text-on-surface">Walk-In Check-In</span>
+        <span class="text-[10px] font-headline font-bold tracking-widest text-primary-container uppercase mb-1">No Appointment</span>
+        <span class="text-2xl font-headline font-bold text-on-primary">Walk-In Check-In</span>
       </div>
-      <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-on-primary group-hover:translate-x-1 transition-transform">
+      <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container group-hover:translate-x-1 transition-transform">
         <span class="material-symbols-outlined">arrow_forward</span>
       </div>
     </button>
@@ -255,7 +272,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      SCREEN 3: CONFIRMATION (Customer-Facing)
 ═══════════════════════════════════════════════ -->
-<div id="screen-confirm" class="screen flex-col items-center justify-center text-center px-8 py-16">
+<div id="screen-confirm" class="screen flex-col items-center justify-center text-center px-8 py-16" onclick="clearTimeout(window._confirmResetTimer); goTo('screen-welcome')">
   <div class="fade-up">
     <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-6">
       <span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings:'FILL' 1,'wght' 400">check_circle</span>
@@ -263,117 +280,286 @@ tailwind.config = {
     <h1 class="text-4xl font-headline font-bold text-on-surface mb-2">You're checked in!</h1>
     <p id="confirm-name" class="text-on-surface-variant font-body mb-8 text-lg"></p>
     <p class="text-sm text-on-surface-variant font-body max-w-xs mx-auto">Please have a seat — a technician will be right with you.</p>
-  </div>
-  <div class="fixed bottom-8 w-full flex justify-center">
-    <button onclick="goTo('screen-welcome')" class="text-sm text-on-surface-variant hover:text-on-surface font-body underline underline-offset-2 transition-colors">
-      Check in another guest
-    </button>
+    <p class="text-xs text-on-surface-variant font-body mt-10 opacity-50">Tap anywhere to return</p>
   </div>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════
-     SCREEN 4: FRONT DESK / QUEUE
+     SCREEN 4: DASHBOARD
 ═══════════════════════════════════════════════ -->
 <div id="screen-desk" class="screen flex-col bg-surface min-h-screen">
 
   <!-- Top bar -->
-  <header class="w-full px-6 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between sticky top-0 z-10">
+  <header class="w-full px-5 py-3 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between sticky top-0 z-10">
     <div class="flex items-center gap-3">
-      <img id="logo-desk" src="" alt="Muse" class="h-10 w-auto object-contain"
-           onerror="this.style.display='none'">
+      <!-- Logo with invert filter so black logo shows on light bg -->
+      <img id="logo-desk" src="" alt="Muse" class="h-10 w-auto object-contain" style="filter: none;" onerror="this.style.display='none'">
       <div>
-        <div class="text-base font-headline font-bold text-on-surface">Front Desk</div>
+        <div class="text-base font-headline font-bold text-on-surface">Dashboard</div>
         <div class="text-[11px] font-body text-on-surface-variant tracking-wide" id="desk-date"></div>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <!-- Square sync status -->
+    <!-- Top nav tabs -->
+    <nav class="flex items-center gap-1">
+      <button class="dash-tab active" id="nav-queue" onclick="showDashPanel('queue')">
+        <span class="material-symbols-outlined" style="font-size:18px">queue</span> Queue
+      </button>
+      <button class="dash-tab" id="nav-reports" onclick="showDashPanel('reports')">
+        <span class="material-symbols-outlined" style="font-size:18px">bar_chart</span> Reports
+      </button>
+      <button class="dash-tab" id="nav-transactions" onclick="showDashPanel('transactions')">
+        <span class="material-symbols-outlined" style="font-size:18px">receipt_long</span> Transactions
+      </button>
+      <button class="dash-tab" id="nav-services" onclick="showDashPanel('services')">
+        <span class="material-symbols-outlined" style="font-size:18px">spa</span> Services
+      </button>
+      <button class="dash-tab" id="nav-staff" onclick="showDashPanel('staff')">
+        <span class="material-symbols-outlined" style="font-size:18px">people</span> Staff
+      </button>
+    </nav>
+    <!-- Action buttons -->
+    <div class="flex items-center gap-2">
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant">
         <span class="sync-dot ok" id="sync-dot"></span>
         <span id="sync-label">Square synced</span>
       </div>
-      <button onclick="syncSquare()" title="Sync with Square" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors">
-        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">sync</span>
+      <button onclick="syncSquare()" title="Sync Square" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">sync</span>
       </button>
-      <button onclick="exportAllToSheets()" title="Export to Google Sheets" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors">
-        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">upload_file</span>
+      <button onclick="exportAllToSheets()" title="Export to Sheets" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">upload_file</span>
       </button>
-      <button onclick="goTo('screen-welcome')" title="Customer Screen" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors">
-        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">tablet</span>
+      <button onclick="showSquareModal()" title="Square Settings" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">settings</span>
+      </button>
+      <button onclick="goTo('screen-welcome')" title="Customer Screen" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">tablet</span>
       </button>
     </div>
   </header>
 
-  <!-- Stats row -->
-  <div class="px-6 py-4 grid grid-cols-3 gap-3" id="stats-row">
-    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-      <div class="text-3xl font-headline font-extrabold text-primary" id="stat-waiting">0</div>
-      <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Waiting</div>
-    </div>
-    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-      <div class="text-3xl font-headline font-extrabold text-on-surface" id="stat-inservice">0</div>
-      <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">In Service</div>
-    </div>
-    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-      <div class="text-3xl font-headline font-extrabold text-on-surface-variant" id="stat-done">0</div>
-      <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Done Today</div>
+  <!-- Main content (full width, no sidebar) -->
+  <div class="flex-grow overflow-y-auto no-scroll p-4">
+
+      <!-- ── QUEUE PANEL ── -->
+      <div class="dash-panel active" id="panel-queue">
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-3xl font-headline font-extrabold text-primary" id="stat-waiting">0</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Waiting</div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-3xl font-headline font-extrabold text-on-surface" id="stat-inservice">0</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">In Service</div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-3xl font-headline font-extrabold text-on-surface" id="stat-done">0</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Done Today</div>
+          </div>
+        </div>
+        <!-- Filter tabs + Add + History date -->
+        <div class="flex gap-2 mb-3 flex-wrap items-center">
+          <button onclick="filterQueue('all')" id="tab-all" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-primary text-on-primary transition-all">All</button>
+          <button onclick="filterQueue('waiting')" id="tab-waiting" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">Waiting</button>
+          <button onclick="filterQueue('inservice')" id="tab-inservice" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">In Service</button>
+          <button onclick="filterQueue('done')" id="tab-done" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">Done</button>
+          <!-- History date picker -->
+          <div class="flex items-center gap-2 ml-2">
+            <input type="date" id="queue-history-date" class="bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="loadQueueHistory(this.value)">
+            <button onclick="clearQueueHistory()" id="clear-history-btn" class="hidden text-xs font-body text-primary underline" >Today</button>
+          </div>
+          <button onclick="showManualAdd()" class="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-body font-semibold bg-primary text-on-primary hover:bg-primary-dim transition-all shadow-sm">
+            <span class="material-symbols-outlined" style="font-size:18px">person_add</span> Add Guest
+          </button>
+        </div>
+        <!-- Queue list -->
+        <div id="queue-list" class="space-y-2"></div>
+        <div id="queue-empty" class="hidden text-center py-16 text-on-surface-variant text-sm font-body">
+          <span class="material-symbols-outlined text-4xl block mb-3 opacity-40">group</span>
+          No guests yet today
+        </div>
+      </div>
+
+      <!-- ── REPORTS PANEL ── -->
+      <div class="dash-panel" id="panel-reports">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-xl font-headline font-bold text-on-surface">Reports</h2>
+            <p class="text-sm font-body text-on-surface-variant mt-0.5">Income, staff earnings & commissions</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportReportExcel()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest hover:bg-surface-container text-on-surface font-body font-semibold text-sm transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">table_view</span> Excel
+            </button>
+            <button onclick="exportReportSheets()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">upload_file</span> Sheets
+            </button>
+          </div>
+        </div>
+
+        <!-- Date range selector -->
+        <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high mb-5">
+          <div class="flex gap-2 flex-wrap mb-3">
+            <button onclick="setReportRange('today')" id="rng-today" class="rng-btn px-3 py-1.5 rounded-full text-sm font-body font-semibold bg-primary text-on-primary transition-all">Today</button>
+            <button onclick="setReportRange('week')" id="rng-week" class="rng-btn px-3 py-1.5 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">This Week</button>
+            <button onclick="setReportRange('month')" id="rng-month" class="rng-btn px-3 py-1.5 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">This Month</button>
+            <button onclick="setReportRange('custom')" id="rng-custom" class="rng-btn px-3 py-1.5 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">Custom</button>
+          </div>
+          <div id="custom-range-inputs" class="hidden grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">From</label>
+              <input type="date" id="report-from" class="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="runReport()">
+            </div>
+            <div>
+              <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">To</label>
+              <input type="date" id="report-to" class="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="runReport()">
+            </div>
+          </div>
+          <p class="text-xs font-body text-on-surface-variant mt-2" id="report-range-label">Showing: Today</p>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-2xl font-headline font-extrabold text-primary" id="rpt-total-income">$0.00</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Total Income</div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-2xl font-headline font-extrabold text-on-surface" id="rpt-total-guests">0</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Guests Served</div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-2xl font-headline font-extrabold text-on-surface" id="rpt-avg-ticket">$0.00</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Avg Ticket</div>
+          </div>
+        </div>
+
+        <!-- Per-staff breakdown -->
+        <h3 class="text-sm font-headline font-bold text-on-surface uppercase tracking-widest mb-3">Staff Breakdown</h3>
+        <div id="rpt-staff-breakdown" class="space-y-2 mb-5"></div>
+
+        <!-- Service breakdown -->
+        <h3 class="text-sm font-headline font-bold text-on-surface uppercase tracking-widest mb-3">Services Breakdown</h3>
+        <div id="rpt-services-breakdown" class="space-y-2"></div>
+
+        <!-- Drill-down detail panel (hidden by default) -->
+        <div id="rpt-drill-panel" class="hidden mt-5">
+          <div class="flex items-center gap-3 mb-4">
+            <button onclick="closeDrillDown()" class="flex items-center gap-1 text-sm font-body text-on-surface-variant hover:text-on-surface">
+              <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span> Back
+            </button>
+            <h3 id="rpt-drill-title" class="text-base font-headline font-bold text-on-surface"></h3>
+          </div>
+          <div id="rpt-drill-list" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- ── TRANSACTIONS PANEL ── -->
+      <div class="dash-panel" id="panel-transactions">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-xl font-headline font-bold text-on-surface">Transaction History</h2>
+            <p class="text-sm font-body text-on-surface-variant mt-0.5">All check-ins with service and payment details</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="date" id="txn-date-filter" class="bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="renderTransactions()">
+            <button onclick="document.getElementById('txn-date-filter').value=''; renderTransactions()" class="text-xs font-body text-primary underline">All</button>
+          </div>
+        </div>
+        <div id="txn-list" class="space-y-2"></div>
+        <div id="txn-empty" class="hidden text-center py-16 text-on-surface-variant text-sm font-body">
+          <span class="material-symbols-outlined text-4xl block mb-3 opacity-40">receipt_long</span>
+          No transactions yet
+        </div>
+      </div>
+
+
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-xl font-headline font-bold text-on-surface">Services</h2>
+            <p class="text-sm font-body text-on-surface-variant mt-0.5">Manage services shown on the check-in screen</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="squarePullServices()" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary font-body font-semibold text-sm hover:bg-primary hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">sync</span> Sync from Square
+            </button>
+            <button onclick="showAddService()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">add</span> Add Service
+            </button>
+          </div>
+        </div>
+        <div id="services-list" class="space-y-2"></div>
+      </div>
+
+      <!-- ── STAFF PANEL ── -->
+      <div class="dash-panel" id="panel-staff">
+        <!-- Technicians -->
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-xl font-headline font-bold text-on-surface">Technicians</h2>
+            <p class="text-sm font-body text-on-surface-variant mt-0.5">Staff who perform services</p>
+          </div>
+          <button onclick="showAddStaff()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+            <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
+          </button>
+        </div>
+        <div id="staff-list" class="space-y-2 mb-8"></div>
+
+        <!-- Front Desk Users -->
+        <div class="flex items-center justify-between mb-5 pt-4 border-t border-surface-container-high">
+          <div>
+            <h2 class="text-xl font-headline font-bold text-on-surface">Front Desk Users</h2>
+            <p class="text-sm font-body text-on-surface-variant mt-0.5">Staff who access the dashboard</p>
+          </div>
+          <button onclick="showAddFdUser()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+            <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
+          </button>
+        </div>
+        <div id="fdusers-list" class="space-y-2"></div>
+      </div>
+
     </div>
   </div>
-
-  <!-- Tabs -->
-  <div class="px-6 flex gap-2 mb-3">
-    <button onclick="filterQueue('all')" id="tab-all" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-primary text-on-primary transition-all">All</button>
-    <button onclick="filterQueue('waiting')" id="tab-waiting" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Waiting</button>
-    <button onclick="filterQueue('inservice')" id="tab-inservice" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">In Service</button>
-    <button onclick="filterQueue('done')" id="tab-done" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Done</button>
-    <!-- Manual add -->
-    <button onclick="showManualAdd()" class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container-lowest border border-outline-variant/40 hover:bg-surface-container transition-all text-on-surface">
-      <span class="material-symbols-outlined" style="font-size:16px">person_add</span>
-      Add
-    </button>
-  </div>
-
-  <!-- Queue list -->
-  <main class="flex-grow overflow-y-auto no-scroll px-6 pb-6">
-    <div id="queue-list" class="space-y-2"></div>
-    <div id="queue-empty" class="hidden text-center py-16 text-on-surface-variant text-sm font-body">
-      <span class="material-symbols-outlined text-4xl block mb-3 opacity-30">group</span>
-      No guests yet today
-    </div>
-  </main>
-
 </div>
 
 
 <!-- ═══════════════════════════════════════════════
      PIN MODAL
 ═══════════════════════════════════════════════ -->
-<div id="pin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
+<div id="pin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
   <div class="bg-surface-container-lowest rounded-2xl p-8 w-80 shadow-2xl fade-up">
     <h2 class="text-xl font-headline font-bold text-on-surface text-center mb-1">Staff Access</h2>
-    <p class="text-xs font-body text-on-surface-variant text-center mb-6">Enter PIN to access front desk</p>
+    <p class="text-xs font-body text-on-surface-variant text-center mb-1" id="pin-subtitle">Enter your PIN</p>
+    <p class="text-xs font-body text-primary text-center mb-5 font-semibold" id="pin-matched-user"></p>
+    <!-- Hidden input captures physical keyboard -->
+    <input id="pin-keyboard-input" type="password" inputmode="numeric" maxlength="6"
+      class="opacity-0 absolute w-0 h-0 pointer-events-none"
+      oninput="onPinKeyboard(this.value)" autocomplete="off">
     <div class="flex gap-3 justify-center mb-6">
       <div id="pin-dots" class="flex gap-2">
-        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
-        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
-        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
-        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-4 h-4 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-4 h-4 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-4 h-4 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-4 h-4 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-4 h-4 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-4 h-4 rounded-full bg-surface-container-highest transition-all"></div>
       </div>
     </div>
     <!-- Numpad -->
     <div class="grid grid-cols-3 gap-3 mb-4">
-      <button onclick="pinInput('1')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">1</button>
-      <button onclick="pinInput('2')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">2</button>
-      <button onclick="pinInput('3')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">3</button>
-      <button onclick="pinInput('4')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">4</button>
-      <button onclick="pinInput('5')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">5</button>
-      <button onclick="pinInput('6')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">6</button>
-      <button onclick="pinInput('7')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">7</button>
-      <button onclick="pinInput('8')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">8</button>
-      <button onclick="pinInput('9')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">9</button>
+      <button onclick="pinInput('1')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">1</button>
+      <button onclick="pinInput('2')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">2</button>
+      <button onclick="pinInput('3')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">3</button>
+      <button onclick="pinInput('4')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">4</button>
+      <button onclick="pinInput('5')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">5</button>
+      <button onclick="pinInput('6')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">6</button>
+      <button onclick="pinInput('7')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">7</button>
+      <button onclick="pinInput('8')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">8</button>
+      <button onclick="pinInput('9')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">9</button>
       <button onclick="pinCancel()" class="h-14 rounded-xl text-sm font-body text-on-surface-variant hover:bg-surface-container transition-all">Cancel</button>
-      <button onclick="pinInput('0')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">0</button>
+      <button onclick="pinInput('0')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all">0</button>
       <button onclick="pinBackspace()" class="h-14 rounded-xl text-on-surface-variant hover:bg-surface-container transition-all flex items-center justify-center">
         <span class="material-symbols-outlined">backspace</span>
       </button>
@@ -429,8 +615,209 @@ tailwind.config = {
 
 
 <!-- ═══════════════════════════════════════════════
-     SQUARE CONFIG MODAL
+     SERVICE EDIT MODAL
 ═══════════════════════════════════════════════ -->
+<div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 id="service-modal-title" class="text-xl font-headline font-bold text-on-surface">Add Service</h2>
+      <button onclick="closeServiceModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Service Name</label>
+        <input id="service-name-input" type="text" placeholder="e.g. Gel Manicure"
+          class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Abbreviation (shown on button)</label>
+        <input id="service-abbr-input" type="text" maxlength="4" placeholder="e.g. GM"
+          class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+      </div>
+    </div>
+    <input type="hidden" id="service-edit-id">
+    <button onclick="saveService()" class="w-full mt-6 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
+      Save Service
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     STAFF EDIT MODAL
+═══════════════════════════════════════════════ -->
+<div id="staff-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 id="staff-modal-title" class="text-xl font-headline font-bold text-on-surface">Add Staff</h2>
+      <button onclick="closeStaffModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Name</label>
+        <input id="staff-name-input" type="text" placeholder="e.g. Christina"
+          class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Commission %</label>
+        <input id="staff-commission-input" type="number" min="0" max="100" step="1" placeholder="e.g. 40"
+          class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+        <p class="text-[11px] font-body text-on-surface-variant mt-1">Leave blank for no commission tracking</p>
+      </div>
+    </div>
+    <input type="hidden" id="staff-edit-id">
+    <button onclick="saveStaff()" class="w-full mt-6 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
+      Save
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     FRONT DESK USER MODAL
+═══════════════════════════════════════════════ -->
+<div id="fduser-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 id="fduser-modal-title" class="text-xl font-headline font-bold text-on-surface">Add Front Desk User</h2>
+      <button onclick="closeFdUserModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Name</label>
+        <input id="fduser-name-input" type="text" placeholder="e.g. Jessica"
+          class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary outline-none transition-colors placeholder:text-outline-variant">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">PIN (4–6 digits)</label>
+        <input id="fduser-pin-input" type="password" inputmode="numeric" maxlength="6" placeholder="••••"
+          class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary outline-none transition-colors placeholder:text-outline-variant">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-2">Role</label>
+        <div class="flex gap-2">
+          <button type="button" id="role-btn-manager" onclick="selectRole('manager')"
+            class="role-btn flex-1 py-2 rounded-xl border-2 border-primary bg-primary text-on-primary font-body font-semibold text-sm transition-all">Manager</button>
+          <button type="button" id="role-btn-frontdesk" onclick="selectRole('frontdesk')"
+            class="role-btn flex-1 py-2 rounded-xl border-2 border-outline-variant bg-transparent text-on-surface font-body font-semibold text-sm transition-all">Front Desk</button>
+        </div>
+        <input type="hidden" id="fduser-role-input" value="manager">
+      </div>
+    </div>
+    <input type="hidden" id="fduser-edit-id">
+    <button onclick="saveFdUser()" class="w-full mt-6 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">Save</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     EDIT SERVICES MODAL
+═══════════════════════════════════════════════ -->
+<div id="edit-services-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-md shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Edit Services</h2>
+      <button onclick="closeEditServicesModal()" class="text-on-surface-variant hover:text-on-surface">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <p id="edit-services-guest-name" class="text-sm font-body text-on-surface-variant mb-4"></p>
+    <div class="grid grid-cols-4 gap-2 mb-6" id="edit-services-grid"></div>
+    <button onclick="saveEditedServices()" class="w-full bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
+      Save Services
+    </button>
+  </div>
+</div>
+
+
+<div id="assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-md shadow-2xl fade-up mx-4 max-h-[90vh] overflow-y-auto no-scroll">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Assign & Price</h2>
+      <button onclick="closeAssignModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p id="assign-guest-name" class="text-sm font-body text-on-surface-variant mb-3"></p>
+
+    <!-- Inline service selector -->
+    <div class="mb-4">
+      <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-2">Services — tap to add or remove</label>
+      <div class="grid grid-cols-4 gap-2" id="assign-service-picker"></div>
+    </div>
+    <div id="assign-services-list" class="space-y-4 mb-4"></div>
+    <div class="border-t border-surface-container-high pt-4 flex items-center justify-between mb-4">
+      <span class="font-body font-semibold text-on-surface">Total</span>
+      <span id="assign-total" class="text-xl font-headline font-bold text-primary">$0.00</span>
+    </div>
+    <div class="flex flex-col gap-2">
+      <div class="flex gap-2">
+        <button onclick="saveAssignments()" class="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-on-primary py-3 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">Save</button>
+        <button id="assign-advance-btn" onclick="saveAndAdvanceStatus()" class="flex-1 bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95 flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined" style="font-size:18px">arrow_forward</span>
+          <span id="assign-advance-label">In Service</span>
+        </button>
+      </div>
+      <button onclick="saveAssignmentsAndPushToSquare()" class="w-full bg-surface-container-lowest border border-outline-variant/60 text-on-surface hover:bg-surface-container py-3 rounded-xl font-headline font-semibold tracking-tight transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
+        <span class="material-symbols-outlined" style="font-size:16px">point_of_sale</span> Save & Push to Square
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     GROUP ASSIGN MODAL (multi-guest tabs)
+═══════════════════════════════════════════════ -->
+<div id="group-assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl w-full max-w-2xl shadow-2xl fade-up mx-4 max-h-[92vh] flex flex-col">
+    <div class="flex items-center justify-between p-6 border-b border-surface-container-high flex-shrink-0">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Assign & Price</h2>
+      <button onclick="closeGroupAssignModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <!-- Guest tabs -->
+    <div id="group-assign-tabs" class="flex gap-1 px-4 pt-3 flex-wrap flex-shrink-0 overflow-x-auto"></div>
+    <!-- Per-guest content -->
+    <div id="group-assign-content" class="flex-grow overflow-y-auto no-scroll p-5"></div>
+    <!-- Footer buttons -->
+    <div class="p-5 border-t border-surface-container-high flex flex-col gap-2 flex-shrink-0">
+      <div class="flex gap-2">
+        <button onclick="saveGroupAssignments()" class="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-on-primary py-3 rounded-xl font-headline font-bold tracking-tight transition-all">Save All</button>
+        <button id="group-advance-btn" onclick="saveGroupAndAdvance()" class="flex-1 bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold tracking-tight transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined" style="font-size:18px">arrow_forward</span>
+          <span id="group-advance-label">In Service</span>
+        </button>
+      </div>
+      <button onclick="saveGroupAndPushSquare()" class="w-full bg-surface-container-lowest border border-outline-variant/60 text-on-surface hover:bg-surface-container py-3 rounded-xl font-headline font-semibold text-sm transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined" style="font-size:16px">point_of_sale</span> Save & Push to Square
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SPLIT / MERGE MODAL
+═══════════════════════════════════════════════ -->
+<div id="split-merge-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-6 w-full max-w-md shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-headline font-bold text-on-surface" id="split-merge-title">Split / Merge</h2>
+      <button onclick="closeSplitMergeModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="split-merge-content"></div>
+  </div>
+</div>
+
+
+<div id="warn-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-on-surface/50 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4 text-center">
+    <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mx-auto mb-4">
+      <span class="material-symbols-outlined text-secondary" style="font-size:28px;font-variation-settings:'FILL' 1">warning</span>
+    </div>
+    <h2 id="warn-title" class="text-xl font-headline font-bold text-on-surface mb-2">Are you sure?</h2>
+    <p id="warn-body" class="text-sm font-body text-on-surface-variant mb-6"></p>
+    <div class="flex gap-3">
+      <button onclick="closeWarnModal()" class="flex-1 border-2 border-outline-variant text-on-surface-variant hover:bg-surface-container py-3 rounded-xl font-headline font-bold transition-all">Cancel</button>
+      <button id="warn-confirm-btn" class="flex-1 bg-secondary hover:bg-secondary/80 text-on-primary py-3 rounded-xl font-headline font-bold transition-all active:scale-95">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <div id="square-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
   <div class="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-2">
@@ -473,28 +860,55 @@ tailwind.config = {
 ═══════════════════════════════════════════════ -->
 <script>
 // ── Config ──────────────────────────────────────
-const STAFF_PIN = "1234"; // Change this in production
-const LOGO_PATH = "/mnt/user-data/uploads/Transparent_B_W_Logo.png";
+const STAFF_PIN = "1234"; // fallback if no front desk users configured
+const LOGO_PATH = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAJYBBoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAEI/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDGQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Z";
 const SQUARE_PROXY = "https://musesquareapi.cpacheco847.workers.dev/square";
 const SHEETS_ID = "1mQJMMu312mIifYhEvMNAksX9P7LV3yLNzTZuljCiOuM";
-const SERVICES = [
-  { id: "manicure", label: "Manicure", abbr: "M" },
-  { id: "pedicure", label: "Pedicure", abbr: "P" },
-  { id: "fullset",  label: "Full Set",  abbr: "FS" },
-  { id: "fill",     label: "Fill",      abbr: "FI" },
-  { id: "dip",      label: "Dip",       abbr: "D" },
-  { id: "polish",   label: "Polish Change", abbr: "PC" },
-  { id: "wax",      label: "Wax",       abbr: "W" },
-  { id: "other",    label: "Other",     abbr: "..." },
-];
 
 // ── State ────────────────────────────────────────
-let queue = []; // { id, name, phone, services[], status, checkinTime, isNew, isAppointment }
-let squareCustomers = []; // cached from Square for autocomplete
+let queue = [];
+let squareCustomers = [];
 let guestCount = 0;
 let currentFilter = 'all';
 let pinBuffer = "";
 let squareConfig = JSON.parse(localStorage.getItem('muse_sq_config') || 'null');
+
+// Services — editable, persisted to localStorage
+let SERVICES = JSON.parse(localStorage.getItem('muse_services') || 'null') || [
+  { id: "manicure", label: "Manicure",       abbr: "M"   },
+  { id: "pedicure", label: "Pedicure",        abbr: "P"   },
+  { id: "fullset",  label: "Full Set",         abbr: "FS"  },
+  { id: "fill",     label: "Fill",             abbr: "FI"  },
+  { id: "dip",      label: "Dip",              abbr: "D"   },
+  { id: "polish",   label: "Polish Change",    abbr: "PC"  },
+  { id: "wax",      label: "Wax",              abbr: "W"   },
+  { id: "other",    label: "Other",            abbr: "..." },
+];
+
+// Staff — editable, persisted to localStorage
+let STAFF = JSON.parse(localStorage.getItem('muse_staff') || 'null') || [
+  { id: "christina", name: "Christina" },
+  { id: "emily",     name: "Emily"     },
+  { id: "john",      name: "John"      },
+  { id: "kat",       name: "Kat"       },
+  { id: "lyn",       name: "Lyn"       },
+  { id: "lee",       name: "Lee"       },
+  { id: "mary",      name: "Mary"      },
+  { id: "miley",     name: "Miley"     },
+  { id: "my",        name: "My"        },
+  { id: "sarah",     name: "Sarah"     },
+  { id: "tu",        name: "Tu"        },
+];
+
+// Front desk users — each has a name, role, and PIN
+let FRONT_DESK_USERS = JSON.parse(localStorage.getItem('muse_fd_users') || 'null') || [
+  { id: "admin", name: "Manager", pin: "1234", role: "manager" },
+];
+let activeUser = null; // currently logged-in front desk user
+
+function saveFrontDeskUsers() { localStorage.setItem('muse_fd_users', JSON.stringify(FRONT_DESK_USERS)); }
+function saveServicesToStorage() { localStorage.setItem('muse_services', JSON.stringify(SERVICES)); }
+function saveStaffToStorage()    { localStorage.setItem('muse_staff',    JSON.stringify(STAFF));    }
 
 // ── Init ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -505,14 +919,115 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDeskDate();
   if (squareConfig) {
     updateSyncLabel('ok', 'Square synced');
-    loadSquareCustomers(); // preload for autocomplete
+    loadSquareCustomers();
   } else updateSyncLabel('pending', 'Square not connected');
 
-  // Show Square config if not set
   setTimeout(() => {
     if (!squareConfig) showSquareModal();
   }, 1500);
+
+  scheduleMidnightReset();
 });
+
+// ── Daily Midnight Reset ──────────────────────────
+function scheduleMidnightReset() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+  const msUntilMidnight = midnight - now;
+  setTimeout(() => {
+    archiveTodayQueue();
+    queue = [];
+    renderQueue();
+    updateStats();
+    showToast('Queue reset for new day');
+    scheduleMidnightReset(); // reschedule for next midnight
+  }, msUntilMidnight);
+}
+
+function archiveTodayQueue() {
+  // Save today's queue to historical records before clearing
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = JSON.parse(localStorage.getItem('muse_queue_archive') || '{}');
+  existing[today] = queue.map(e => ({
+    ...e,
+    checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+  }));
+  // Keep last 90 days only
+  const keys = Object.keys(existing).sort().slice(-90);
+  const pruned = {};
+  keys.forEach(k => pruned[k] = existing[k]);
+  localStorage.setItem('muse_queue_archive', JSON.stringify(pruned));
+  // Also save to allRecords for reports
+  queue.forEach(e => saveRecord(e));
+}
+
+// ── Queue History Browser ─────────────────────────
+let viewingHistoryDate = null;
+
+function loadQueueHistory(dateStr) {
+  if (!dateStr) { clearQueueHistory(); return; }
+  const today = new Date().toISOString().slice(0, 10);
+  if (dateStr === today) { clearQueueHistory(); return; }
+
+  const archive = JSON.parse(localStorage.getItem('muse_queue_archive') || '{}');
+  const historical = archive[dateStr];
+  viewingHistoryDate = dateStr;
+  document.getElementById('clear-history-btn').classList.remove('hidden');
+
+  const list = document.getElementById('queue-list');
+  const empty = document.getElementById('queue-empty');
+
+  if (!historical || historical.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    empty.querySelector('span:last-child') && (empty.querySelector('span:last-child').textContent = `No records for ${dateStr}`);
+    return;
+  }
+
+  // Render read-only historical view
+  empty.classList.add('hidden');
+  const fmt = d => new Date(d).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  list.innerHTML = `
+    <div class="bg-secondary-container/40 rounded-xl px-4 py-2 mb-2 text-sm font-body text-on-surface-variant flex items-center gap-2">
+      <span class="material-symbols-outlined" style="font-size:16px">history</span>
+      Viewing history for ${new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'})}
+    </div>
+    ${historical.map(e => {
+      const assignSummary = (e.assignments || []).filter(a => a.techId || a.station || a.cost).map(a => {
+        const tech = STAFF.find(s => s.id === a.techId);
+        const svc  = SERVICES.find(s => s.id === a.serviceId);
+        const parts = [svc?.label, tech ? `→ ${tech.name}` : '', a.station ? `@ ${a.station}` : '', a.cost ? `$${a.cost.toFixed(2)}` : ''].filter(Boolean);
+        return parts.join(' ');
+      }).join(' · ');
+      const badgeClass = { waiting: 'badge-waiting', inservice: 'badge-inservice', done: 'badge-done' }[e.status] || 'badge-done';
+      const serviceLabels = (e.services || []).map(sid => SERVICES.find(s=>s.id===sid)?.label || sid).join(', ') || '—';
+      return `
+        <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high flex items-center gap-4 opacity-80">
+          <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0">
+            <span class="text-sm font-headline font-bold text-on-surface">${(e.name||'?').charAt(0).toUpperCase()}</span>
+          </div>
+          <div class="flex-grow min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-headline font-semibold text-on-surface text-base">${e.name}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full font-body font-semibold ${badgeClass}">${e.status}</span>
+              ${e.totalCost ? `<span class="font-semibold text-primary text-sm">$${Number(e.totalCost).toFixed(2)}</span>` : ''}
+            </div>
+            <div class="text-xs font-body text-on-surface-variant mt-0.5">${serviceLabels}</div>
+            ${assignSummary ? `<div class="text-[11px] font-body text-primary mt-0.5">${assignSummary}</div>` : ''}
+            <div class="text-[11px] font-body text-outline mt-0.5">${fmt(e.checkinTime)}${e.phone ? ' · ' + e.phone : ''}</div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function clearQueueHistory() {
+  viewingHistoryDate = null;
+  document.getElementById('queue-history-date').value = '';
+  document.getElementById('clear-history-btn').classList.add('hidden');
+  renderQueue();
+}
 
 function setLogo() {
   // Attempt to load the uploaded logo for all screens
@@ -671,15 +1186,15 @@ function addGuestCard() {
       </div>
 
       <!-- Same contact checkbox -->
-      <label class="flex items-center gap-3 mb-5 cursor-pointer group" id="same-contact-label-${idx}">
-        <div class="relative flex-shrink-0">
-          <input type="checkbox" id="same-contact-${idx}" onchange="toggleSameContact(${idx})"
-            class="sr-only peer">
-          <div class="w-5 h-5 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
-            <span class="material-symbols-outlined text-on-primary hidden peer-checked-icon" style="font-size:13px;font-variation-settings:'FILL' 1,'wght' 600">check</span>
-          </div>
+      <label class="flex items-center gap-3 mb-5 cursor-pointer" id="same-contact-label-${idx}" onclick="toggleSameContact(${idx})">
+        <div id="same-contact-box-${idx}"
+          class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center flex-shrink-0 transition-all"
+          style="background:transparent">
+          <span class="material-symbols-outlined hidden" id="same-contact-check-${idx}"
+            style="font-size:14px;color:#ffffff;font-variation-settings:'FILL' 1,'wght' 700">check</span>
         </div>
-        <span class="text-sm font-body text-on-surface-variant group-hover:text-on-surface transition-colors">Same contact info as primary guest</span>
+        <span class="text-sm font-body text-on-surface-variant">Same contact info as primary guest</span>
+        <input type="checkbox" id="same-contact-${idx}" class="hidden">
       </label>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-5">
@@ -758,6 +1273,12 @@ function toggleService(btn, guestIdx, serviceId) {
 }
 
 // ── Check-In Submission ──────────────────────────
+const GROUP_COLORS = [
+  '#1a5252','#785a1a','#5c3d8f','#1a5c7a','#7a2a1a',
+  '#2a7a4f','#7a1a5c','#4f4f1a','#1a3a7a','#7a4f1a'
+];
+let groupColorIndex = 0;
+
 function submitCheckin() {
   const newEntries = [];
   for (let i = 1; i <= guestCount; i++) {
@@ -768,7 +1289,6 @@ function submitCheckin() {
 
     let phone, first, last;
     if (sameContact) {
-      // Only need first name; borrow phone from primary
       first = document.getElementById(`first-only-${i}`)?.value.trim() || '';
       phone = document.getElementById('phone-1')?.value.trim() || '';
       last  = '';
@@ -800,6 +1320,21 @@ function submitCheckin() {
 
   if (newEntries.length === 0) return;
 
+  // Assign group info if multiple guests checked in together
+  if (newEntries.length > 1) {
+    const groupId = `grp-${Date.now()}`;
+    const groupColor = GROUP_COLORS[groupColorIndex % GROUP_COLORS.length];
+    groupColorIndex++;
+    const primaryName = newEntries[0].name;
+    newEntries.forEach((e, i) => {
+      e.groupId = groupId;
+      e.groupColor = groupColor;
+      e.groupLabel = i === 0
+        ? `${e.name} (primary)`
+        : `${primaryName} — ${e.name}`;
+    });
+  }
+
   // Square: upsert only guests who aren't using same contact
   newEntries.forEach(e => { if (!e.skipSquare) squareUpsertCustomer(e); });
 
@@ -811,8 +1346,12 @@ function submitCheckin() {
     newEntries.map(e => e.name).join(' & ');
   goTo('screen-confirm');
 
-  // Auto-reset to welcome after 5 seconds
-  setTimeout(() => goTo('screen-welcome'), 5000);
+  clearTimeout(window._confirmResetTimer);
+  window._confirmResetTimer = setTimeout(() => {
+    if (document.getElementById('screen-confirm').classList.contains('active')) {
+      goTo('screen-welcome');
+    }
+  }, 5000);
 
   renderQueue();
   updateStats();
@@ -845,39 +1384,84 @@ function renderQueue() {
     const apptBadge = e.isAppointment
       ? `<span class="badge-appointment text-[11px] px-2 py-0.5 rounded-full font-body font-semibold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:11px">calendar_today</span>Appt</span>`
       : '';
+    const assignSummary = (e.assignments || []).filter(a => a.techId || a.station || a.cost).map(a => {
+      const tech = STAFF.find(s => s.id === a.techId);
+      const svc  = SERVICES.find(s => s.id === a.serviceId);
+      const parts = [];
+      if (svc)       parts.push(svc.label);
+      if (tech)      parts.push(`→ ${tech.name}`);
+      if (a.station) parts.push(`@ ${a.station}`);
+      if (a.cost)    parts.push(`$${a.cost.toFixed(2)}`);
+      return parts.join(' ');
+    }).join(' · ');
+    const totalDisplay = e.totalCost ? `<span class="font-semibold text-primary">$${e.totalCost.toFixed(2)}</span>` : '';
+
+    const cardBg = e.status === 'done'
+      ? 'bg-surface-container-high border-surface-container-highest opacity-70'
+      : `bg-surface-container-lowest ${e.isAppointment ? 'border-primary/40' : 'border-surface-container-high'}`;
+
+    // Group color dot and label
+    const groupDot = e.groupId
+      ? `<span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${e.groupColor}" title="Party"></span>`
+      : '';
+    const groupLabel = e.groupLabel
+      ? `<span class="text-[10px] font-body italic" style="color:${e.groupColor}">${e.groupLabel}</span>`
+      : '';
+
+    // Check if entry has group mates in queue for merge button context
+    const hasGroupMates = e.groupId && queue.filter(x => x.groupId === e.groupId && String(x.id) !== String(e.id)).length > 0;
+
     return `
-      <div class="queue-row bg-surface-container-lowest rounded-xl p-4 border ${e.isAppointment ? 'border-primary/30' : 'border-surface-container-high'} flex items-center gap-4" data-id="${e.id}">
-        <!-- Avatar -->
-        <div class="w-10 h-10 rounded-full ${e.isAppointment ? 'bg-primary' : 'bg-primary-container'} flex items-center justify-center flex-shrink-0">
-          <span class="text-sm font-headline font-bold ${e.isAppointment ? 'text-on-primary' : 'text-primary'}">${e.name.charAt(0).toUpperCase()}</span>
+      <div class="queue-row ${cardBg} rounded-xl p-4 border flex items-center gap-4" data-id="${e.id}">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-headline font-bold"
+          style="${e.groupId ? `background:${e.groupColor}20; color:${e.groupColor}; border:2px solid ${e.groupColor}` : e.status === 'done' ? 'background:#c2cacd;color:#4a5258' : e.isAppointment ? 'background:#1a5252;color:#ffffff' : 'background:#8fd4d3;color:#0a2e2e'}">
+          ${e.name.charAt(0).toUpperCase()}
         </div>
-        <!-- Info -->
         <div class="flex-grow min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
+            ${groupDot}
             <span class="font-headline font-semibold text-on-surface text-base">${e.name}</span>
             <span class="text-[11px] px-2 py-0.5 rounded-full font-body font-semibold ${badgeClass}">${badgeLabel}</span>
             ${apptBadge}
+            ${totalDisplay}
           </div>
+          ${groupLabel ? `<div class="mt-0.5">${groupLabel}</div>` : ''}
           <div class="text-xs font-body text-on-surface-variant mt-0.5 truncate">${serviceLabels}</div>
+          ${assignSummary ? `<div class="text-[11px] font-body text-primary mt-0.5 truncate">${assignSummary}</div>` : ''}
           <div class="text-[11px] font-body text-outline mt-0.5">${timeStr}${e.phone ? ' · ' + e.phone : ''}</div>
         </div>
-        <!-- Actions -->
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button onclick="showGroupAssignModal('${e.id}')" title="Assign & Price"
+            class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+            <span class="material-symbols-outlined" style="font-size:22px">assignment_ind</span>
+          </button>
+          ${e.groupId ? `
+          <button onclick="showSplitMergeModal('${e.id}')" title="Split / Merge"
+            class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+            <span class="material-symbols-outlined" style="font-size:22px">call_split</span>
+          </button>` : `
+          <button onclick="showMergeSelectModal('${e.id}')" title="Merge with another guest"
+            class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+            <span class="material-symbols-outlined" style="font-size:22px">merge</span>
+          </button>`}
           ${e.status === 'waiting' ? `
-            <button onclick="updateStatus('${e.id}','inservice')" title="Start Service"
-              class="w-9 h-9 rounded-full hover:bg-primary-container flex items-center justify-center text-primary transition-colors">
-              <span class="material-symbols-outlined" style="font-size:18px">play_circle</span>
+            <button onclick="tryAdvanceStatus('${e.id}','inservice')" title="Move to In Service"
+              class="q-action-btn bg-primary-container hover:bg-primary text-primary hover:text-on-primary">
+              <span class="material-symbols-outlined" style="font-size:22px">play_circle</span>
             </button>` : ''}
           ${e.status === 'inservice' ? `
-            <button onclick="updateStatus('${e.id}','done')" title="Mark Done"
-              class="w-9 h-9 rounded-full hover:bg-primary-container flex items-center justify-center text-primary transition-colors">
-              <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>
+            <button onclick="tryAdvanceStatus('${e.id}','done')" title="Mark Done"
+              class="q-action-btn bg-primary-container hover:bg-primary text-primary hover:text-on-primary">
+              <span class="material-symbols-outlined" style="font-size:22px">check_circle</span>
             </button>` : ''}
           ${e.status === 'done' ? `
-            <span class="material-symbols-outlined text-outline-variant" style="font-size:20px">check</span>` : ''}
+            <button onclick="confirmReopen('${e.id}')" title="Reopen Ticket"
+              class="q-action-btn bg-surface-container hover:bg-secondary-container text-outline-variant hover:text-secondary">
+              <span class="material-symbols-outlined" style="font-size:22px">undo</span>
+            </button>` : ''}
           <button onclick="removeFromQueue('${e.id}')" title="Remove"
-            class="w-9 h-9 rounded-full hover:bg-error/10 flex items-center justify-center text-outline hover:text-error transition-colors">
-            <span class="material-symbols-outlined" style="font-size:16px">close</span>
+            class="q-action-btn bg-surface-container hover:bg-error/20 text-outline hover:text-error">
+            <span class="material-symbols-outlined" style="font-size:20px">close</span>
           </button>
         </div>
       </div>
@@ -889,6 +1473,8 @@ function updateStatus(id, status) {
   const entry = queue.find(e => String(e.id) === String(id));
   if (entry) {
     entry.status = status;
+    if (status === 'done') saveRecord(entry);
+    updateSheetsRow(entry);
     renderQueue();
     updateStats();
   }
@@ -918,6 +1504,182 @@ function updateStats() {
   document.getElementById('stat-waiting').textContent = queue.filter(e=>e.status==='waiting').length;
   document.getElementById('stat-inservice').textContent = queue.filter(e=>e.status==='inservice').length;
   document.getElementById('stat-done').textContent = queue.filter(e=>e.status==='done').length;
+}
+
+// ── Dashboard Panel Switching ─────────────────────
+function showDashPanel(panel) {
+  ['queue','reports','transactions','services','staff'].forEach(p => {
+    document.getElementById(`panel-${p}`)?.classList.remove('active');
+    document.getElementById(`nav-${p}`)?.classList.remove('active');
+  });
+  document.getElementById(`panel-${panel}`)?.classList.add('active');
+  document.getElementById(`nav-${panel}`)?.classList.add('active');
+  if (panel === 'services')      renderServicesList();
+  if (panel === 'staff')         { renderStaffList(); renderFdUsersList(); }
+  if (panel === 'reports')       { setReportRange('today'); }
+  if (panel === 'transactions')  renderTransactions();
+}
+
+// ── Services CRUD ────────────────────────────────
+function renderServicesList() {
+  const list = document.getElementById('services-list');
+  if (!list) return;
+  list.innerHTML = SERVICES.map(s => `
+    <div class="bg-surface-container-lowest rounded-xl px-5 py-4 border border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+          <span class="text-xs font-headline font-bold text-on-primary">${s.abbr}</span>
+        </div>
+        <span class="font-headline font-semibold text-on-surface text-base">${s.label}</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="showEditService('${s.id}')" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+        </button>
+        <button onclick="deleteService('${s.id}')" class="w-9 h-9 rounded-full hover:bg-error/10 flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddService() {
+  document.getElementById('service-modal-title').textContent = 'Add Service';
+  document.getElementById('service-name-input').value = '';
+  document.getElementById('service-abbr-input').value = '';
+  document.getElementById('service-edit-id').value = '';
+  document.getElementById('service-modal').classList.remove('hidden');
+  document.getElementById('service-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('service-name-input').focus(), 100);
+}
+
+function showEditService(id) {
+  const svc = SERVICES.find(s => s.id === id);
+  if (!svc) return;
+  document.getElementById('service-modal-title').textContent = 'Edit Service';
+  document.getElementById('service-name-input').value = svc.label;
+  document.getElementById('service-abbr-input').value = svc.abbr;
+  document.getElementById('service-edit-id').value = id;
+  document.getElementById('service-modal').classList.remove('hidden');
+  document.getElementById('service-modal').style.display = 'flex';
+}
+
+function closeServiceModal() {
+  document.getElementById('service-modal').classList.add('hidden');
+  document.getElementById('service-modal').style.display = '';
+}
+
+function saveService() {
+  const label = document.getElementById('service-name-input').value.trim();
+  const abbr  = document.getElementById('service-abbr-input').value.trim();
+  const editId = document.getElementById('service-edit-id').value;
+  if (!label) { showToast('Please enter a service name.'); return; }
+  if (!abbr)  { showToast('Please enter an abbreviation.'); return; }
+  if (editId) {
+    const svc = SERVICES.find(s => s.id === editId);
+    if (svc) { svc.label = label; svc.abbr = abbr; }
+  } else {
+    SERVICES.push({ id: `svc-${Date.now()}`, label, abbr });
+  }
+  saveServicesToStorage();
+  closeServiceModal();
+  renderServicesList();
+  showToast(editId ? 'Service updated' : `"${label}" added`);
+}
+
+function deleteService(id) {
+  const svc = SERVICES.find(s => s.id === id);
+  if (!svc) return;
+  if (!confirm(`Remove "${svc.label}" from services?`)) return;
+  SERVICES = SERVICES.filter(s => s.id !== id);
+  saveServicesToStorage();
+  renderServicesList();
+  showToast(`"${svc.label}" removed`);
+}
+
+// ── Staff CRUD ────────────────────────────────────
+function renderStaffList() {
+  const list = document.getElementById('staff-list');
+  if (!list) return;
+  list.innerHTML = STAFF.map(st => `
+    <div class="bg-surface-container-lowest rounded-xl px-5 py-4 border border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
+          <span class="text-sm font-headline font-bold text-on-surface">${st.name.charAt(0).toUpperCase()}</span>
+        </div>
+        <div>
+          <div class="font-headline font-semibold text-on-surface text-base">${st.name}</div>
+          ${st.commission != null ? `<div class="text-xs font-body text-on-surface-variant">${st.commission}% commission</div>` : ''}
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="showEditStaff('${st.id}')" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+        </button>
+        <button onclick="deleteStaff('${st.id}')" class="w-9 h-9 rounded-full hover:bg-error/10 flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddStaff() {
+  document.getElementById('staff-modal-title').textContent = 'Add Technician';
+  document.getElementById('staff-name-input').value = '';
+  document.getElementById('staff-commission-input').value = '';
+  document.getElementById('staff-edit-id').value = '';
+  document.getElementById('staff-modal').classList.remove('hidden');
+  document.getElementById('staff-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('staff-name-input').focus(), 100);
+}
+
+function showEditStaff(id) {
+  const st = STAFF.find(s => s.id === id);
+  if (!st) return;
+  document.getElementById('staff-modal-title').textContent = 'Edit Technician';
+  document.getElementById('staff-name-input').value = st.name;
+  document.getElementById('staff-commission-input').value = st.commission != null ? st.commission : '';
+  document.getElementById('staff-edit-id').value = id;
+  document.getElementById('staff-modal').classList.remove('hidden');
+  document.getElementById('staff-modal').style.display = 'flex';
+}
+
+function closeStaffModal() {
+  document.getElementById('staff-modal').classList.add('hidden');
+  document.getElementById('staff-modal').style.display = '';
+}
+
+function saveStaff() {
+  const name = document.getElementById('staff-name-input').value.trim();
+  const commRaw = document.getElementById('staff-commission-input').value.trim();
+  const commission = commRaw !== '' ? parseFloat(commRaw) : null;
+  const editId = document.getElementById('staff-edit-id').value;
+  if (!name) { showToast('Please enter a name.'); return; }
+  if (commission !== null && (isNaN(commission) || commission < 0 || commission > 100)) {
+    showToast('Commission must be 0–100.'); return;
+  }
+  if (editId) {
+    const st = STAFF.find(s => s.id === editId);
+    if (st) { st.name = name; st.commission = commission; }
+  } else {
+    STAFF.push({ id: `staff-${Date.now()}`, name, commission });
+  }
+  saveStaffToStorage();
+  closeStaffModal();
+  renderStaffList();
+  showToast(editId ? 'Technician updated' : `${name} added`);
+}
+
+function deleteStaff(id) {
+  const st = STAFF.find(s => s.id === id);
+  if (!st) return;
+  if (!confirm(`Remove ${st.name} from staff?`)) return;
+  STAFF = STAFF.filter(s => s.id !== id);
+  saveStaffToStorage();
+  renderStaffList();
+  showToast(`${st.name} removed`);
 }
 
 // ── Manual Add Modal ─────────────────────────────
@@ -1077,6 +1839,19 @@ function submitManualAdd() {
 
   if (newEntries.length === 0) return;
 
+  // Assign group info if multiple guests
+  if (newEntries.length > 1) {
+    const groupId = `grp-${Date.now()}`;
+    const groupColor = GROUP_COLORS[groupColorIndex % GROUP_COLORS.length];
+    groupColorIndex++;
+    const primaryName = newEntries[0].name;
+    newEntries.forEach((e, i) => {
+      e.groupId = groupId;
+      e.groupColor = groupColor;
+      e.groupLabel = i === 0 ? `${e.name} (primary)` : `${primaryName} — ${e.name}`;
+    });
+  }
+
   newEntries.forEach(e => { if (!e.skipSquare) squareUpsertCustomer(e); });
   newEntries.forEach(e => exportToSheets(e));
 
@@ -1091,12 +1866,19 @@ async function exportToSheets(entry) {
   const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
   try {
     const row = {
-      timestamp: entry.checkinTime.toLocaleString(),
+      action: 'append',
+      entryId: String(entry.id),
+      timestamp: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toLocaleString(),
       name: entry.name,
       phone: entry.phone || '',
       services: entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
-      status: entry.status,
       type: entry.isAppointment ? 'Appointment' : 'Walk-In',
+      status: entry.status,
+      staff: (entry.assignments || []).map(a => STAFF.find(s => s.id === a.techId)?.name).filter(Boolean).join(', '),
+      stations: (entry.assignments || []).map(a => a.station).filter(Boolean).join(', '),
+      detail: '',
+      total: entry.totalCost ? `$${entry.totalCost.toFixed(2)}` : '',
+      loggedBy: activeUser ? activeUser.name : '',
       sheetId: SHEETS_ID,
     };
     await fetch(SHEETS_URL, {
@@ -1116,19 +1898,501 @@ function exportAllToSheets() {
   showToast(`Exporting ${queue.length} check-ins to Google Sheets…`);
 }
 
+// ── Auto-update existing Sheets row ──────────────
+async function updateSheetsRow(entry) {
+  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+  try {
+    const assignDetail = (entry.assignments || []).map(a => {
+      const tech = STAFF.find(s => s.id === a.techId);
+      const svc  = SERVICES.find(s => s.id === a.serviceId);
+      const parts = [];
+      if (svc)  parts.push(svc.label);
+      if (tech) parts.push(tech.name);
+      if (a.station) parts.push(a.station);
+      if (a.cost) parts.push(`$${a.cost.toFixed(2)}`);
+      return parts.join(' ');
+    }).join(' | ');
+
+    const row = {
+      action: 'update',
+      entryId: String(entry.id),
+      timestamp: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toLocaleString(),
+      name: entry.name,
+      phone: entry.phone || '',
+      services: entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
+      type: entry.isAppointment ? 'Appointment' : 'Walk-In',
+      status: entry.status,
+      staff: (entry.assignments || []).map(a => STAFF.find(s => s.id === a.techId)?.name).filter(Boolean).join(', '),
+      stations: (entry.assignments || []).map(a => a.station).filter(Boolean).join(', '),
+      detail: assignDetail,
+      total: entry.totalCost ? `$${entry.totalCost.toFixed(2)}` : '',
+      loggedBy: activeUser ? activeUser.name : '',
+      sheetId: SHEETS_ID,
+    };
+    await fetch(SHEETS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row),
+    });
+  } catch(e) { console.warn('Sheets update failed:', e); }
+}
+
+// ── Reports ───────────────────────────────────────
+let reportRange = { type: 'today', from: null, to: null };
+// In-memory historical records (persisted to localStorage)
+let allRecords = JSON.parse(localStorage.getItem('muse_records') || '[]');
+
+function saveRecord(entry) {
+  // Called when status changes to 'done' — persist a snapshot
+  const existing = allRecords.findIndex(r => String(r.id) === String(entry.id));
+  const snapshot = {
+    id: String(entry.id),
+    name: entry.name,
+    phone: entry.phone || '',
+    services: entry.services,
+    assignments: entry.assignments || [],
+    totalCost: entry.totalCost || 0,
+    checkinTime: entry.checkinTime instanceof Date ? entry.checkinTime.toISOString() : entry.checkinTime,
+    status: entry.status,
+    isAppointment: entry.isAppointment || false,
+    loggedBy: activeUser ? activeUser.name : '',
+  };
+  if (existing >= 0) allRecords[existing] = snapshot;
+  else allRecords.push(snapshot);
+  localStorage.setItem('muse_records', JSON.stringify(allRecords));
+}
+
+// Override updateStatus to also save record when done
+const _origUpdateStatus = updateStatus;
+
+function setReportRange(type) {
+  reportRange.type = type;
+  document.querySelectorAll('.rng-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`rng-${type}`)?.classList.add('active');
+  const customInputs = document.getElementById('custom-range-inputs');
+  if (type === 'custom') {
+    customInputs?.classList.remove('hidden');
+    customInputs?.classList.add('grid');
+  } else {
+    customInputs?.classList.add('hidden');
+    customInputs?.classList.remove('grid');
+  }
+  if (type !== 'custom') runReport();
+}
+
+function getReportDates() {
+  const now = new Date();
+  let from, to;
+  if (reportRange.type === 'today') {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    to   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  } else if (reportRange.type === 'week') {
+    const day = now.getDay();
+    from = new Date(now); from.setDate(now.getDate() - day); from.setHours(0,0,0,0);
+    to   = new Date(from); to.setDate(from.getDate() + 6); to.setHours(23,59,59,999);
+  } else if (reportRange.type === 'month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59);
+  } else {
+    const f = document.getElementById('report-from')?.value;
+    const t = document.getElementById('report-to')?.value;
+    if (!f || !t) return null;
+    from = new Date(f + 'T00:00:00');
+    to   = new Date(t + 'T23:59:59');
+  }
+  return { from, to };
+}
+
+function runReport() {
+  const dates = getReportDates();
+  if (!dates) return;
+  const { from, to } = dates;
+
+  // Merge live queue (done entries) + historical records
+  const liveSnaps = queue
+    .filter(e => e.status === 'done')
+    .map(e => ({
+      id: String(e.id), name: e.name, phone: e.phone || '',
+      services: e.services, assignments: e.assignments || [],
+      totalCost: e.totalCost || 0,
+      checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+      status: e.status, isAppointment: e.isAppointment || false,
+      loggedBy: activeUser ? activeUser.name : '',
+    }));
+  const liveIds = new Set(liveSnaps.map(r => r.id));
+  const combined = [...liveSnaps, ...allRecords.filter(r => !liveIds.has(r.id))];
+
+  const filtered = combined.filter(r => {
+    const d = new Date(r.checkinTime);
+    return d >= from && d <= to;
+  });
+
+  // Totals
+  const totalIncome = filtered.reduce((s, r) => s + (r.totalCost || 0), 0);
+  const guestCount  = filtered.length;
+  const avgTicket   = guestCount > 0 ? totalIncome / guestCount : 0;
+
+  document.getElementById('rpt-total-income').textContent = `$${totalIncome.toFixed(2)}`;
+  document.getElementById('rpt-total-guests').textContent = guestCount;
+  document.getElementById('rpt-avg-ticket').textContent   = `$${avgTicket.toFixed(2)}`;
+
+  // Date label
+  const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  document.getElementById('report-range-label').textContent =
+    `Showing: ${fmt(from)}${reportRange.type !== 'today' ? ' – ' + fmt(to) : ''}`;
+
+  // Per-staff breakdown
+  const staffMap = {};
+  filtered.forEach(r => {
+    (r.assignments || []).forEach(a => {
+      if (!a.techId) return;
+      if (!staffMap[a.techId]) staffMap[a.techId] = { income: 0, count: 0 };
+      staffMap[a.techId].income += a.cost || 0;
+      staffMap[a.techId].count++;
+    });
+  });
+  const staffBreakdown = document.getElementById('rpt-staff-breakdown');
+  const staffEntries = Object.entries(staffMap).sort((a,b) => b[1].income - a[1].income);
+  if (staffEntries.length === 0) {
+    staffBreakdown.innerHTML = '<p class="text-sm font-body text-on-surface-variant py-2">No assigned services in this period.</p>';
+  } else {
+    staffBreakdown.innerHTML = staffEntries.map(([techId, data]) => {
+      const tech = STAFF.find(s => s.id === techId);
+      const name = tech?.name || 'Unknown';
+      const comm = tech?.commission != null ? (data.income * tech.commission / 100) : null;
+      return `
+        <div class="bg-surface-container-lowest rounded-xl px-5 py-3 border border-surface-container-high flex items-center justify-between cursor-pointer hover:bg-surface-container transition-colors" onclick="drillDownStaff('${techId}')">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center">
+              <span class="text-sm font-headline font-bold text-on-surface">${name.charAt(0)}</span>
+            </div>
+            <div>
+              <div class="font-headline font-semibold text-on-surface text-sm">${name}</div>
+              <div class="text-xs font-body text-on-surface-variant">${data.count} service${data.count !== 1 ? 's' : ''} · tap for details</div>
+            </div>
+          </div>
+          <div class="text-right flex items-center gap-3">
+            <div>
+              <div class="font-headline font-bold text-on-surface">$${data.income.toFixed(2)}</div>
+              ${comm !== null ? `<div class="text-xs font-body text-primary">Commission: $${comm.toFixed(2)} (${tech.commission}%)</div>` : ''}
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant" style="font-size:18px">chevron_right</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Per-service breakdown
+  const svcMap = {};
+  filtered.forEach(r => {
+    (r.assignments || []).forEach(a => {
+      if (!a.serviceId) return;
+      if (!svcMap[a.serviceId]) svcMap[a.serviceId] = { income: 0, count: 0 };
+      svcMap[a.serviceId].income += a.cost || 0;
+      svcMap[a.serviceId].count++;
+    });
+    // Also count services without assignments
+    if (!r.assignments || r.assignments.length === 0) {
+      r.services.forEach(sid => {
+        if (!svcMap[sid]) svcMap[sid] = { income: 0, count: 0 };
+        svcMap[sid].count++;
+      });
+    }
+  });
+  const svcBreakdown = document.getElementById('rpt-services-breakdown');
+  const svcEntries = Object.entries(svcMap).sort((a,b) => b[1].income - a[1].income);
+  if (svcEntries.length === 0) {
+    svcBreakdown.innerHTML = '<p class="text-sm font-body text-on-surface-variant py-2">No services in this period.</p>';
+  } else {
+    svcBreakdown.innerHTML = svcEntries.map(([sid, data]) => {
+      const svc = SERVICES.find(s => s.id === sid);
+      return `
+        <div class="bg-surface-container-lowest rounded-xl px-5 py-3 border border-surface-container-high flex items-center justify-between cursor-pointer hover:bg-surface-container transition-colors" onclick="drillDownService('${sid}')">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+              <span class="text-xs font-headline font-bold text-on-primary">${svc?.abbr || '?'}</span>
+            </div>
+            <div>
+              <div class="font-headline font-semibold text-on-surface text-sm">${svc?.label || sid}</div>
+              <div class="text-xs font-body text-on-surface-variant">${data.count} time${data.count !== 1 ? 's' : ''} · tap for details</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="font-headline font-bold text-on-surface">$${data.income.toFixed(2)}</div>
+            <span class="material-symbols-outlined text-on-surface-variant" style="font-size:18px">chevron_right</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Store current filtered data for export
+  window._currentReportData = { filtered, from, to, totalIncome, guestCount, avgTicket, staffMap, svcMap };
+}
+
+// ── Report Drill-Down ─────────────────────────────
+function drillDownStaff(techId) {
+  const d = window._currentReportData;
+  if (!d) return;
+  const tech = STAFF.find(s => s.id === techId);
+  const name = tech?.name || 'Unknown';
+
+  // Collect all assignments for this tech in the period
+  const rows = [];
+  d.filtered.forEach(r => {
+    (r.assignments || []).forEach(a => {
+      if (a.techId !== techId) return;
+      const svc = SERVICES.find(s => s.id === a.serviceId);
+      const dt = new Date(r.checkinTime);
+      rows.push({ customer: r.name, service: svc?.label || a.serviceId, cost: a.cost || 0, station: a.station || '', time: dt });
+    });
+  });
+
+  showDrillPanel(`${name} — Service Detail`, rows.map(row => `
+    <div class="bg-surface-container-lowest rounded-xl px-5 py-3 border border-surface-container-high flex items-center justify-between">
+      <div>
+        <div class="font-headline font-semibold text-on-surface text-sm">${row.customer}</div>
+        <div class="text-xs font-body text-on-surface-variant">${row.service}${row.station ? ' · ' + row.station : ''}</div>
+        <div class="text-[11px] font-body text-outline">${row.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} · ${row.time.toLocaleDateString()}</div>
+      </div>
+      <div class="font-headline font-bold text-on-surface">$${row.cost.toFixed(2)}</div>
+    </div>
+  `).join(''));
+}
+
+function drillDownService(sid) {
+  const d = window._currentReportData;
+  if (!d) return;
+  const svc = SERVICES.find(s => s.id === sid);
+
+  const rows = [];
+  d.filtered.forEach(r => {
+    (r.assignments || []).forEach(a => {
+      if (a.serviceId !== sid) return;
+      const tech = STAFF.find(s => s.id === a.techId);
+      const dt = new Date(r.checkinTime);
+      rows.push({ customer: r.name, tech: tech?.name || '—', cost: a.cost || 0, station: a.station || '', time: dt });
+    });
+  });
+
+  showDrillPanel(`${svc?.label || sid} — Detail`, rows.map(row => `
+    <div class="bg-surface-container-lowest rounded-xl px-5 py-3 border border-surface-container-high flex items-center justify-between">
+      <div>
+        <div class="font-headline font-semibold text-on-surface text-sm">${row.customer}</div>
+        <div class="text-xs font-body text-on-surface-variant">Tech: ${row.tech}${row.station ? ' · ' + row.station : ''}</div>
+        <div class="text-[11px] font-body text-outline">${row.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} · ${row.time.toLocaleDateString()}</div>
+      </div>
+      <div class="font-headline font-bold text-on-surface">$${row.cost.toFixed(2)}</div>
+    </div>
+  `).join(''));
+}
+
+function showDrillPanel(title, html) {
+  document.getElementById('rpt-drill-title').textContent = title;
+  document.getElementById('rpt-drill-list').innerHTML = html || '<p class="text-sm font-body text-on-surface-variant">No detail available.</p>';
+  document.getElementById('rpt-drill-panel').classList.remove('hidden');
+  // Scroll to drill panel
+  document.getElementById('rpt-drill-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeDrillDown() {
+  document.getElementById('rpt-drill-panel').classList.add('hidden');
+}
+
+// ── Transactions History ──────────────────────────
+function renderTransactions() {
+  const list = document.getElementById('txn-list');
+  const empty = document.getElementById('txn-empty');
+  if (!list) return;
+
+  const dateFilter = document.getElementById('txn-date-filter')?.value;
+
+  // Merge live queue + historical records
+  const liveSnaps = queue.map(e => ({
+    id: String(e.id), name: e.name, phone: e.phone || '',
+    services: e.services, assignments: e.assignments || [],
+    totalCost: e.totalCost || 0,
+    checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+    status: e.status, isAppointment: e.isAppointment || false,
+  }));
+  const liveIds = new Set(liveSnaps.map(r => r.id));
+  let combined = [...liveSnaps, ...allRecords.filter(r => !liveIds.has(r.id))];
+
+  if (dateFilter) {
+    combined = combined.filter(r => {
+      const d = new Date(r.checkinTime);
+      return d.toISOString().slice(0,10) === dateFilter;
+    });
+  }
+
+  combined.sort((a, b) => new Date(b.checkinTime) - new Date(a.checkinTime));
+
+  if (combined.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.innerHTML = combined.map(r => {
+    const dt = new Date(r.checkinTime);
+    const timeStr = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const dateStr = dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    const badgeClass = { waiting: 'badge-waiting', inservice: 'badge-inservice', done: 'badge-done' }[r.status] || 'badge-done';
+    const serviceLabels = (r.services || []).map(sid => SERVICES.find(s=>s.id===sid)?.label||sid).join(', ') || '—';
+    const assignRows = (r.assignments || []).filter(a => a.techId || a.cost).map(a => {
+      const tech = STAFF.find(s => s.id === a.techId);
+      const svc  = SERVICES.find(s => s.id === a.serviceId);
+      return `<div class="text-[11px] font-body text-primary">${svc?.label || ''} → ${tech?.name || '—'}${a.station ? ' @ ' + a.station : ''} ${a.cost ? '· $' + a.cost.toFixed(2) : ''}</div>`;
+    }).join('');
+
+    return `
+      <div class="bg-surface-container-lowest rounded-xl px-5 py-4 border border-surface-container-high">
+        <div class="flex items-start justify-between">
+          <div class="flex-grow min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <span class="font-headline font-bold text-on-surface">${r.name}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full font-body font-semibold ${badgeClass}">${r.status}</span>
+              ${r.isAppointment ? '<span class="badge-appointment text-[11px] px-2 py-0.5 rounded-full font-body font-semibold">Appt</span>' : ''}
+            </div>
+            <div class="text-xs font-body text-on-surface-variant mb-1">${serviceLabels}</div>
+            ${assignRows}
+            <div class="text-[11px] font-body text-outline mt-1">${dateStr} · ${timeStr}${r.phone ? ' · ' + r.phone : ''}</div>
+          </div>
+          <div class="text-right ml-4 flex-shrink-0">
+            <div class="text-lg font-headline font-extrabold text-primary">$${(r.totalCost||0).toFixed(2)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+
+function exportReportExcel() {
+  const d = window._currentReportData;
+  if (!d || d.filtered.length === 0) { showToast('No data to export.'); return; }
+
+  // Build CSV content (opens in Excel)
+  const rows = [
+    ['Muse Nails & Spa — Report'],
+    [`Period: ${d.from.toLocaleDateString()} – ${d.to.toLocaleDateString()}`],
+    [`Total Income: $${d.totalIncome.toFixed(2)}`, `Guests Served: ${d.guestCount}`, `Avg Ticket: $${(d.totalIncome/Math.max(d.guestCount,1)).toFixed(2)}`],
+    [],
+    ['CHECK-INS'],
+    ['Date','Time','Name','Phone','Services','Type','Staff','Total','Status'],
+    ...d.filtered.map(r => {
+      const dt = new Date(r.checkinTime);
+      const staffNames = (r.assignments||[]).map(a => STAFF.find(s=>s.id===a.techId)?.name).filter(Boolean).join(', ');
+      return [
+        dt.toLocaleDateString(), dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+        r.name, r.phone,
+        r.services.map(sid => SERVICES.find(s=>s.id===sid)?.label||sid).join(', '),
+        r.isAppointment ? 'Appointment' : 'Walk-In',
+        staffNames, r.totalCost ? `$${r.totalCost.toFixed(2)}` : '$0.00', r.status,
+      ];
+    }),
+    [],
+    ['STAFF BREAKDOWN'],
+    ['Technician','Services','Income','Commission %','Commission Earned'],
+    ...Object.entries(d.staffMap).map(([techId, data]) => {
+      const tech = STAFF.find(s=>s.id===techId);
+      const comm = tech?.commission != null ? (data.income * tech.commission / 100) : 0;
+      return [tech?.name||'Unknown', data.count, `$${data.income.toFixed(2)}`, tech?.commission!=null?`${tech.commission}%`:'N/A', `$${comm.toFixed(2)}`];
+    }),
+    [],
+    ['SERVICES BREAKDOWN'],
+    ['Service','Count','Income'],
+    ...Object.entries(d.svcMap).map(([sid, data]) => {
+      const svc = SERVICES.find(s=>s.id===sid);
+      return [svc?.label||sid, data.count, `$${data.income.toFixed(2)}`];
+    }),
+  ];
+
+  const csv = rows.map(r => r.map(cell => `"${String(cell||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `muse-report-${d.from.toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Report downloaded as CSV (opens in Excel)');
+}
+
+// ── Sheets Report Export ──────────────────────────
+async function exportReportSheets() {
+  const d = window._currentReportData;
+  if (!d || d.filtered.length === 0) { showToast('No data to export.'); return; }
+  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+  showToast('Exporting report to Google Sheets…');
+  try {
+    const payload = {
+      action: 'report',
+      sheetId: SHEETS_ID,
+      from: d.from.toLocaleDateString(),
+      to: d.to.toLocaleDateString(),
+      totalIncome: d.totalIncome.toFixed(2),
+      guestCount: d.guestCount,
+      avgTicket: (d.totalIncome / Math.max(d.guestCount,1)).toFixed(2),
+      rows: d.filtered.map(r => {
+        const dt = new Date(r.checkinTime);
+        const staffNames = (r.assignments||[]).map(a => STAFF.find(s=>s.id===a.techId)?.name).filter(Boolean).join(', ');
+        return {
+          date: dt.toLocaleDateString(),
+          time: dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+          name: r.name, phone: r.phone,
+          services: r.services.map(sid => SERVICES.find(s=>s.id===sid)?.label||sid).join(', '),
+          type: r.isAppointment ? 'Appointment' : 'Walk-In',
+          staff: staffNames,
+          total: r.totalCost ? `$${r.totalCost.toFixed(2)}` : '$0.00',
+          status: r.status,
+        };
+      }),
+      staffBreakdown: Object.entries(d.staffMap).map(([techId, data]) => {
+        const tech = STAFF.find(s=>s.id===techId);
+        const comm = tech?.commission != null ? (data.income * tech.commission / 100) : 0;
+        return { name: tech?.name||'Unknown', count: data.count, income: data.income.toFixed(2), commissionPct: tech?.commission||0, commissionEarned: comm.toFixed(2) };
+      }),
+    };
+    await fetch(SHEETS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    showToast('Report sent to Google Sheets!');
+  } catch(e) { showToast('Failed to export report.'); console.warn(e); }
+}
+
 // ── Square Customer Autocomplete ──────────────────
 async function loadSquareCustomers() {
   try {
-    const res = await fetch(`${SQUARE_PROXY}/v2/customers?limit=200&sort_field=CREATED_AT&sort_order=DESC`);
-    if (!res.ok) return;
-    const data = await res.json();
-    squareCustomers = (data.customers || []).map(c => ({
-      id: c.id,
-      given_name: c.given_name || '',
-      family_name: c.family_name || '',
-      phone: c.phone_number || '',
-      display: [c.given_name, c.family_name].filter(Boolean).join(' '),
-    }));
+    let allCustomers = [];
+    let cursor = null;
+
+    // Paginate through all customers
+    do {
+      const url = `${SQUARE_PROXY}/v2/customers?limit=100&sort_field=CREATED_AT&sort_order=DESC${cursor ? '&cursor=' + cursor : ''}`;
+      const res = await fetch(url);
+      if (!res.ok) break;
+      const data = await res.json();
+      allCustomers = allCustomers.concat(data.customers || []);
+      cursor = data.cursor || null;
+    } while (cursor);
+
+    // Map and filter — skip entries with no real name or placeholder '-'
+    squareCustomers = allCustomers
+      .filter(c => c.given_name && c.given_name.trim() !== '-' && c.given_name.trim() !== '')
+      .map(c => ({
+        id: c.id,
+        given_name: c.given_name?.trim() || '',
+        family_name: (c.family_name || '').trim().replace(/^-$/, ''),
+        phone: c.phone_number || '',
+        display: [c.given_name?.trim(), (c.family_name || '').trim().replace(/^-$/, '')].filter(Boolean).join(' '),
+      }));
+
+    console.log(`Loaded ${squareCustomers.length} customers from Square for autocomplete`);
   } catch(e) {
     console.warn('Could not load Square customers for autocomplete:', e);
   }
@@ -1136,20 +2400,31 @@ async function loadSquareCustomers() {
 
 function filterCustomers(query, field) {
   if (!query || query.length < 2) return [];
-  const q = query.toLowerCase();
+  const q = query.toLowerCase().replace(/\D/g,'');
   return squareCustomers.filter(c => {
-    if (field === 'phone') return c.phone.replace(/\D/g,'').includes(q.replace(/\D/g,''));
-    if (field === 'first') return c.given_name.toLowerCase().startsWith(q) || c.display.toLowerCase().startsWith(q);
+    if (field === 'phone') {
+      // Strip country code from Square's +1XXXXXXXXXX format
+      const phone = c.phone.replace(/\D/g,'').replace(/^1(\d{10})$/, '$1');
+      return phone.includes(q) && q.length >= 3;
+    }
+    if (field === 'first') {
+      return c.given_name.toLowerCase().startsWith(query.toLowerCase()) ||
+             c.display.toLowerCase().startsWith(query.toLowerCase());
+    }
     return false;
   }).slice(0, 6);
 }
 
 function fillFromCustomer(customer, guestIdx, prefix, phoneId, firstId, lastId) {
-  // Fill all fields from selected Square customer
   const phoneEl = document.getElementById(phoneId);
   const firstEl = document.getElementById(firstId);
   const lastEl  = document.getElementById(lastId);
-  if (phoneEl) phoneEl.value = customer.phone;
+  // Strip +1 country code and format as (xxx) xxx-xxxx
+  const digits = customer.phone.replace(/\D/g,'').replace(/^1(\d{10})$/, '$1').slice(0,10);
+  const formatted = digits.length === 10
+    ? `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`
+    : customer.phone;
+  if (phoneEl) phoneEl.value = formatted;
   if (firstEl) firstEl.value = customer.given_name;
   if (lastEl)  lastEl.value  = customer.family_name;
   // Hide all dropdowns for this guest
@@ -1164,20 +2439,43 @@ function buildDropdown(customers, dropdownId, guestIdx, phoneId, firstId, lastId
   const dropdown = document.getElementById(dropdownId);
   if (!dropdown) return;
   if (customers.length === 0) { dropdown.classList.add('hidden'); return; }
-  dropdown.innerHTML = customers.map(c => `
+  dropdown.innerHTML = customers.map(c => {
+    const digits = c.phone.replace(/\D/g,'').replace(/^1(\d{10})$/, '$1').slice(0,10);
+    const displayPhone = digits.length === 10
+      ? `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`
+      : c.phone;
+    return `
     <div class="autocomplete-item" onmousedown="fillFromCustomer(
       {id:'${c.id}',phone:'${c.phone.replace(/'/g,"\\'")}',given_name:'${c.given_name.replace(/'/g,"\\'")}',family_name:'${c.family_name.replace(/'/g,"\\'")}'},
       ${guestIdx}, '', '${phoneId}', '${firstId}', '${lastId}'
     )">
       <div class="ac-name">${c.display || '—'}</div>
-      <div class="ac-phone">${c.phone || 'No phone'}</div>
+      <div class="ac-phone">${displayPhone || 'No phone'}</div>
     </div>
-  `).join('');
+  `}).join('');
   dropdown.classList.remove('hidden');
+}
+
+// ── Phone Formatting ─────────────────────────────
+function formatPhone(input) {
+  // Strip everything except digits
+  let digits = input.value.replace(/\D/g, '').slice(0, 10);
+  let formatted = '';
+  if (digits.length === 0) {
+    formatted = '';
+  } else if (digits.length <= 3) {
+    formatted = `(${digits}`;
+  } else if (digits.length <= 6) {
+    formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  } else {
+    formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  }
+  input.value = formatted;
 }
 
 // Customer-facing autocomplete
 function acSearch(input, idx, field) {
+  if (field === 'phone') formatPhone(input);
   const results = filterCustomers(input.value, field);
   const dropId = field === 'phone' ? `ac-phone-${idx}` : `ac-first-${idx}`;
   buildDropdown(results, dropId, idx, `phone-${idx}`, `first-${idx}`, `last-${idx}`);
@@ -1189,6 +2487,7 @@ function acSearch(input, idx, field) {
 
 // Front desk autocomplete
 function acSearchManual(input, idx, field) {
+  if (field === 'phone') formatPhone(input);
   const results = filterCustomers(input.value, field);
   const dropId = field === 'phone' ? `mac-phone-${idx}` : `mac-first-${idx}`;
   buildDropdown(results, dropId, idx, `manual-phone-${idx}`, `manual-first-${idx}`, `manual-last-${idx}`);
@@ -1209,48 +2508,884 @@ document.addEventListener('click', (e) => {
 // ── PIN Modal ────────────────────────────────────
 function showPinModal() {
   pinBuffer = "";
+  activeUser = null;
   updatePinDots();
   document.getElementById('pin-error').classList.add('hidden');
+  document.getElementById('pin-matched-user').textContent = '';
   document.getElementById('pin-modal').classList.remove('hidden');
   document.getElementById('pin-modal').style.display = 'flex';
+  // Focus hidden input for keyboard entry
+  setTimeout(() => {
+    const kb = document.getElementById('pin-keyboard-input');
+    if (kb) { kb.value = ''; kb.focus(); }
+  }, 100);
 }
 
 function pinCancel() {
   document.getElementById('pin-modal').classList.add('hidden');
   document.getElementById('pin-modal').style.display = '';
+  pinBuffer = "";
 }
 
+// Called by on-screen numpad
 function pinInput(d) {
-  if (pinBuffer.length >= 4) return;
+  if (pinBuffer.length >= 6) return;
   pinBuffer += d;
   updatePinDots();
-  if (pinBuffer.length === 4) {
-    setTimeout(() => {
-      if (pinBuffer === STAFF_PIN) {
-        pinCancel();
-        goTo('screen-desk');
-      } else {
-        document.getElementById('pin-error').classList.remove('hidden');
-        pinBuffer = "";
-        updatePinDots();
-      }
-    }, 200);
-  }
+  checkPin();
+}
+
+// Called by physical keyboard via hidden input
+function onPinKeyboard(val) {
+  const digits = val.replace(/\D/g,'');
+  pinBuffer = digits.slice(0, 6);
+  // Sync hidden input
+  document.getElementById('pin-keyboard-input').value = pinBuffer;
+  updatePinDots();
+  checkPin();
 }
 
 function pinBackspace() {
-  pinBuffer = pinBuffer.slice(0,-1);
+  pinBuffer = pinBuffer.slice(0, -1);
+  document.getElementById('pin-keyboard-input').value = pinBuffer;
   updatePinDots();
+  document.getElementById('pin-matched-user').textContent = '';
+}
+
+function checkPin() {
+  // Show matched user name as they type (without revealing PIN)
+  const matched = FRONT_DESK_USERS.find(u => u.pin === pinBuffer) ||
+    (pinBuffer === STAFF_PIN ? { name: 'Manager', role: 'manager' } : null);
+
+  const matchedEl = document.getElementById('pin-matched-user');
+  if (matched && pinBuffer.length >= 4) {
+    matchedEl.textContent = `Welcome, ${matched.name}`;
+  } else {
+    matchedEl.textContent = '';
+  }
+
+  // Only attempt login when PIN is at least 4 digits and user typed enough
+  if (pinBuffer.length < 4) return;
+
+  // Try to find user with exact PIN match
+  const user = FRONT_DESK_USERS.find(u => u.pin === pinBuffer);
+  const isFallback = pinBuffer === STAFF_PIN;
+
+  if (user || isFallback) {
+    setTimeout(() => {
+      activeUser = user || { id: 'fallback', name: 'Manager', pin: STAFF_PIN, role: 'manager' };
+      pinCancel();
+      goTo('screen-desk');
+      showToast(`Welcome, ${activeUser.name}`);
+    }, 300);
+  } else if (pinBuffer.length >= 6) {
+    // Max length reached with no match
+    document.getElementById('pin-error').classList.remove('hidden');
+    pinBuffer = "";
+    document.getElementById('pin-keyboard-input').value = '';
+    updatePinDots();
+    matchedEl.textContent = '';
+    setTimeout(() => document.getElementById('pin-error').classList.add('hidden'), 2000);
+  }
 }
 
 function updatePinDots() {
   document.querySelectorAll('.pin-dot').forEach((dot, i) => {
     dot.classList.toggle('bg-primary', i < pinBuffer.length);
     dot.classList.toggle('bg-surface-container-highest', i >= pinBuffer.length);
+    dot.classList.toggle('scale-110', i === pinBuffer.length - 1);
   });
 }
 
-// ── Square Integration ───────────────────────────
+// ── Front Desk Users CRUD ─────────────────────────
+function renderFdUsersList() {
+  const list = document.getElementById('fdusers-list');
+  if (!list) return;
+  if (FRONT_DESK_USERS.length === 0) {
+    list.innerHTML = '<p class="text-sm font-body text-on-surface-variant py-4 text-center">No front desk users yet. Add one above.</p>';
+    return;
+  }
+  list.innerHTML = FRONT_DESK_USERS.map(u => `
+    <div class="bg-surface-container-lowest rounded-xl px-5 py-4 border border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+          <span class="text-sm font-headline font-bold text-on-primary">${u.name.charAt(0).toUpperCase()}</span>
+        </div>
+        <div>
+          <div class="font-headline font-semibold text-on-surface text-base">${u.name}</div>
+          <div class="text-xs font-body text-on-surface-variant capitalize">${u.role} · PIN: ${'•'.repeat(u.pin.length)}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="showEditFdUser('${u.id}')" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+        </button>
+        <button onclick="deleteFdUser('${u.id}')" class="w-9 h-9 rounded-full hover:bg-error/10 flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectRole(role) {
+  document.getElementById('fduser-role-input').value = role;
+  ['manager','frontdesk'].forEach(r => {
+    const btn = document.getElementById(`role-btn-${r}`);
+    if (r === role) {
+      btn.classList.add('bg-primary','text-on-primary','border-primary');
+      btn.classList.remove('bg-transparent','border-outline-variant','text-on-surface');
+    } else {
+      btn.classList.remove('bg-primary','text-on-primary','border-primary');
+      btn.classList.add('bg-transparent','border-outline-variant','text-on-surface');
+    }
+  });
+}
+
+function showAddFdUser() {
+  document.getElementById('fduser-modal-title').textContent = 'Add Front Desk User';
+  document.getElementById('fduser-name-input').value = '';
+  document.getElementById('fduser-pin-input').value = '';
+  document.getElementById('fduser-edit-id').value = '';
+  selectRole('frontdesk');
+  document.getElementById('fduser-modal').classList.remove('hidden');
+  document.getElementById('fduser-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('fduser-name-input').focus(), 100);
+}
+
+function showEditFdUser(id) {
+  const u = FRONT_DESK_USERS.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('fduser-modal-title').textContent = 'Edit User';
+  document.getElementById('fduser-name-input').value = u.name;
+  document.getElementById('fduser-pin-input').value = u.pin;
+  document.getElementById('fduser-edit-id').value = id;
+  selectRole(u.role);
+  document.getElementById('fduser-modal').classList.remove('hidden');
+  document.getElementById('fduser-modal').style.display = 'flex';
+}
+
+function closeFdUserModal() {
+  document.getElementById('fduser-modal').classList.add('hidden');
+  document.getElementById('fduser-modal').style.display = '';
+}
+
+function saveFdUser() {
+  const name  = document.getElementById('fduser-name-input').value.trim();
+  const pin   = document.getElementById('fduser-pin-input').value.trim();
+  const role  = document.getElementById('fduser-role-input').value;
+  const editId = document.getElementById('fduser-edit-id').value;
+  if (!name) { showToast('Please enter a name.'); return; }
+  if (!pin || pin.length < 4) { showToast('PIN must be at least 4 digits.'); return; }
+  if (!/^\d+$/.test(pin)) { showToast('PIN must be numbers only.'); return; }
+  // Check for duplicate PINs
+  const duplicate = FRONT_DESK_USERS.find(u => u.pin === pin && u.id !== editId);
+  if (duplicate) { showToast(`PIN already used by ${duplicate.name}.`); return; }
+
+  if (editId) {
+    const u = FRONT_DESK_USERS.find(x => x.id === editId);
+    if (u) { u.name = name; u.pin = pin; u.role = role; }
+  } else {
+    FRONT_DESK_USERS.push({ id: `fd-${Date.now()}`, name, pin, role });
+  }
+  saveFrontDeskUsers();
+  closeFdUserModal();
+  renderFdUsersList();
+  showToast(editId ? 'User updated' : `${name} added`);
+}
+
+function deleteFdUser(id) {
+  const u = FRONT_DESK_USERS.find(x => x.id === id);
+  if (!u) return;
+  if (!confirm(`Remove ${u.name} from front desk users?`)) return;
+  FRONT_DESK_USERS = FRONT_DESK_USERS.filter(x => x.id !== id);
+  saveFrontDeskUsers();
+  renderFdUsersList();
+  showToast(`${u.name} removed`);
+}
+
+// ── Queue Assign Modal ────────────────────────────
+let assignEntryId = null;
+
+function showAssignModal(entryId) {
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+  assignEntryId = entryId;
+
+  document.getElementById('assign-guest-name').textContent = `Guest: ${entry.name}`;
+
+  // Render service picker
+  renderAssignServicePicker(entry);
+
+  // Render assignment rows for currently selected services
+  renderAssignRows(entry);
+
+  // Set advance button label
+  const advLabel = document.getElementById('assign-advance-label');
+  if (advLabel) advLabel.textContent = entry.status === 'inservice' ? 'Mark Done' : 'In Service';
+
+  // Hide advance button if ticket is done (reopen path instead)
+  const advBtn = document.getElementById('assign-advance-btn');
+  if (advBtn) advBtn.style.display = entry.status === 'done' ? 'none' : '';
+
+  document.getElementById('assign-modal').classList.remove('hidden');
+  document.getElementById('assign-modal').style.display = 'flex';
+}
+
+function renderAssignServicePicker(entry) {
+  const picker = document.getElementById('assign-service-picker');
+  if (!picker) return;
+  picker.innerHTML = SERVICES.map(s => {
+    const selected = entry.services.includes(s.id);
+    return `
+      <button type="button"
+        onclick="toggleAssignService('${s.id}')"
+        id="assign-svc-btn-${s.id}"
+        class="service-btn flex flex-col items-center justify-center py-2 rounded-lg border transition-all duration-200 text-xs ${selected ? 'bg-primary text-on-primary border-primary selected' : 'bg-surface-container text-on-surface-variant border-outline-variant/30 hover:bg-primary/10 hover:text-primary'}">
+        <span class="font-headline font-bold">${s.abbr}</span>
+        <span class="text-[9px] font-body mt-0.5 uppercase tracking-tighter leading-tight text-center">${s.label}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function toggleAssignService(sid) {
+  const entry = queue.find(e => String(e.id) === String(assignEntryId));
+  if (!entry) return;
+
+  if (entry.services.includes(sid)) {
+    if (entry.services.length === 1) { showToast('At least one service required.'); return; }
+    entry.services = entry.services.filter(id => id !== sid);
+    // Remove stale assignment
+    if (entry.assignments) entry.assignments = entry.assignments.filter(a => a.serviceId !== sid);
+  } else {
+    entry.services.push(sid);
+  }
+
+  // Update button visual
+  const btn = document.getElementById(`assign-svc-btn-${sid}`);
+  if (btn) {
+    const selected = entry.services.includes(sid);
+    btn.classList.toggle('bg-primary', selected);
+    btn.classList.toggle('text-on-primary', selected);
+    btn.classList.toggle('border-primary', selected);
+    btn.classList.toggle('selected', selected);
+    btn.classList.toggle('bg-surface-container', !selected);
+    btn.classList.toggle('text-on-surface-variant', !selected);
+    btn.classList.toggle('border-outline-variant/30', !selected);
+  }
+
+  renderAssignRows(entry);
+}
+
+function renderAssignRows(entry) {
+  const stations = [
+    ...Array.from({length:12}, (_,i) => `P${i+1}`),
+    ...Array.from({length:15}, (_,i) => `M${i+1}`),
+  ];
+  const servicesList = document.getElementById('assign-services-list');
+  const entryServices = entry.services.length > 0 ? entry.services : ['other'];
+  servicesList.innerHTML = entryServices.map(sid => {
+    const svc = SERVICES.find(s => s.id === sid) || { id: sid, label: sid };
+    const assignment = (entry.assignments || []).find(a => a.serviceId === sid) || {};
+    const techOptions = STAFF.map(st =>
+      `<option value="${st.id}" ${assignment.techId === st.id ? 'selected' : ''}>${st.name}</option>`
+    ).join('');
+    const stationOptions = stations.map(st =>
+      `<option value="${st}" ${assignment.station === st ? 'selected' : ''}>${st}</option>`
+    ).join('');
+    return `
+      <div class="bg-surface-container-low rounded-xl p-4 border border-surface-container-high" data-service-id="${sid}">
+        <div class="font-headline font-semibold text-on-surface mb-3">${svc.label}</div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Technician</label>
+            <select class="assign-tech w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="updateAssignTotal()">
+              <option value="">— Unassigned —</option>
+              ${techOptions}
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Station</label>
+            <select class="assign-station w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary">
+              <option value="">— None —</option>
+              ${stationOptions}
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Cost ($)</label>
+            <input type="number" min="0" step="0.01" placeholder="0.00"
+              value="${assignment.cost || ''}"
+              class="assign-cost w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary"
+              oninput="updateAssignTotal()">
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  updateAssignTotal();
+}
+
+function updateAssignTotal() {
+  const costs = [...document.querySelectorAll('.assign-cost')].map(i => parseFloat(i.value) || 0);
+  const total = costs.reduce((a, b) => a + b, 0);
+  document.getElementById('assign-total').textContent = `$${total.toFixed(2)}`;
+}
+
+function closeAssignModal() {
+  document.getElementById('assign-modal').classList.add('hidden');
+  document.getElementById('assign-modal').style.display = '';
+  assignEntryId = null;
+}
+
+// Shared: read current assign modal inputs into entry
+function readAssignModalInputs(entry) {
+  const rows = document.querySelectorAll('#assign-services-list [data-service-id]');
+  entry.assignments = Array.from(rows).map(row => ({
+    serviceId: row.dataset.serviceId,
+    techId: row.querySelector('.assign-tech').value,
+    station: row.querySelector('.assign-station')?.value || '',
+    cost: parseFloat(row.querySelector('.assign-cost').value) || 0,
+  }));
+  entry.totalCost = entry.assignments.reduce((a, b) => a + b.cost, 0);
+}
+
+// Check if all services have a tech and cost assigned
+function validateAssignments(entry) {
+  if (!entry.assignments || entry.assignments.length === 0) return false;
+  return entry.assignments.every(a => a.techId && a.cost > 0);
+}
+
+// Block advancing to 'done' without full assignments
+function tryAdvanceStatus(id, targetStatus) {
+  const entry = queue.find(e => String(e.id) === String(id));
+  if (!entry) return;
+
+  if (targetStatus === 'done') {
+    if (!validateAssignments(entry)) {
+      showToast('Please assign a technician and cost before marking as Done.');
+      showGroupAssignModal(id);
+      return;
+    }
+  }
+  updateStatus(id, targetStatus);
+}
+
+// Save assignments + advance status from within the assign modal
+function saveAndAdvanceStatus() {
+  const entry = queue.find(e => String(e.id) === String(assignEntryId));
+  if (!entry) return;
+  readAssignModalInputs(entry);
+
+  const targetStatus = entry.status === 'inservice' ? 'done' : 'inservice';
+
+  if (targetStatus === 'done' && !validateAssignments(entry)) {
+    showToast('Please assign a tech and cost for every service.');
+    return;
+  }
+
+  closeAssignModal();
+  entry.status = targetStatus;
+  if (targetStatus === 'done') saveRecord(entry);
+  updateSheetsRow(entry);
+  renderQueue();
+  updateStats();
+  showToast(`Saved & moved to ${targetStatus === 'done' ? 'Done' : 'In Service'}`);
+}
+
+function saveAssignments() {
+  const entry = queue.find(e => String(e.id) === String(assignEntryId));
+  if (!entry) return;
+  readAssignModalInputs(entry);
+  closeAssignModal();
+  updateSheetsRow(entry);
+  renderQueue();
+  showToast('Assignments saved');
+}
+
+async function saveAssignmentsAndPushToSquare() {
+  const entry = queue.find(e => String(e.id) === String(assignEntryId));
+  if (!entry) return;
+  readAssignModalInputs(entry);
+
+  if (!validateAssignments(entry)) {
+    // Keep modal open — just show toast
+    showToast('Please assign a tech and cost before pushing to Square.');
+    return;
+  }
+
+  updateSheetsRow(entry);
+  renderQueue();
+  showToast('Pushing to Square…');
+  await pushOrderToSquare(entry);
+  closeAssignModal();
+}
+
+// ── Edit Services Modal ───────────────────────────
+let editServicesEntryId = null;
+
+function showEditServicesModal(entryId) {
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+  editServicesEntryId = entryId;
+
+  document.getElementById('edit-services-guest-name').textContent = `Guest: ${entry.name}`;
+
+  const grid = document.getElementById('edit-services-grid');
+  grid.innerHTML = SERVICES.map(s => {
+    const selected = entry.services.includes(s.id);
+    return `
+      <button type="button" onclick="this.classList.toggle('selected')"
+        data-service="${s.id}"
+        class="service-btn flex flex-col items-center justify-center py-3 rounded-lg border transition-all duration-200 ${selected ? 'bg-primary text-on-primary border-primary selected' : 'bg-surface-container text-on-surface-variant border-outline-variant/30 hover:bg-primary/10 hover:text-primary'}">
+        <span class="text-xs font-headline font-bold">${s.abbr}</span>
+        <span class="text-[9px] font-body mt-0.5 uppercase tracking-tighter leading-tight text-center">${s.label}</span>
+      </button>
+    `;
+  }).join('');
+
+  document.getElementById('edit-services-modal').classList.remove('hidden');
+  document.getElementById('edit-services-modal').style.display = 'flex';
+}
+
+function closeEditServicesModal() {
+  document.getElementById('edit-services-modal').classList.add('hidden');
+  document.getElementById('edit-services-modal').style.display = '';
+  editServicesEntryId = null;
+}
+
+function saveEditedServices() {
+  const entry = queue.find(e => String(e.id) === String(editServicesEntryId));
+  if (!entry) return;
+
+  const selected = [...document.querySelectorAll('#edit-services-grid .service-btn.selected')].map(b => b.dataset.service);
+  if (selected.length === 0) { showToast('Please select at least one service.'); return; }
+
+  entry.services = selected;
+
+  // Remove stale assignments for services no longer selected
+  if (entry.assignments) {
+    entry.assignments = entry.assignments.filter(a => selected.includes(a.serviceId));
+  }
+
+  closeEditServicesModal();
+  updateSheetsRow(entry);
+  renderQueue();
+  showToast('Services updated');
+}
+
+// ── Group Assign Modal ────────────────────────────
+let groupAssignEntries = []; // array of entry ids in current group modal
+let activeGroupTab = 0;
+
+function showGroupAssignModal(entryId) {
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+
+  // Collect all group members if applicable, otherwise just this entry
+  if (entry.groupId) {
+    groupAssignEntries = queue
+      .filter(e => e.groupId === entry.groupId)
+      .map(e => String(e.id));
+  } else {
+    groupAssignEntries = [String(entry.id)];
+  }
+  activeGroupTab = 0;
+
+  renderGroupAssignTabs();
+  renderGroupAssignContent();
+
+  // Set advance label from first entry's status
+  const first = queue.find(e => String(e.id) === groupAssignEntries[0]);
+  const advLabel = document.getElementById('group-advance-label');
+  if (advLabel && first) advLabel.textContent = first.status === 'inservice' ? 'Mark Done' : 'In Service';
+  const advBtn = document.getElementById('group-advance-btn');
+  if (advBtn && first) advBtn.style.display = first.status === 'done' ? 'none' : '';
+
+  document.getElementById('group-assign-modal').classList.remove('hidden');
+  document.getElementById('group-assign-modal').style.display = 'flex';
+}
+
+function renderGroupAssignTabs() {
+  const tabs = document.getElementById('group-assign-tabs');
+  tabs.innerHTML = groupAssignEntries.map((id, i) => {
+    const entry = queue.find(e => String(e.id) === id);
+    if (!entry) return '';
+    const isActive = i === activeGroupTab;
+    const color = entry.groupColor || '#1a5252';
+    return `
+      <button onclick="switchGroupTab(${i})" id="gtab-${i}"
+        class="px-4 py-2 rounded-full text-sm font-body font-semibold transition-all flex items-center gap-2 ${isActive ? 'text-white' : 'bg-surface-container text-on-surface hover:bg-surface-container-high'}"
+        style="${isActive ? `background:${color}` : ''}">
+        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${color}"></span>
+        ${entry.name.split(' ')[0]}
+      </button>
+    `;
+  }).join('');
+}
+
+function switchGroupTab(i) {
+  // Save current tab's inputs before switching
+  saveCurrentGroupTabInputs();
+  activeGroupTab = i;
+  renderGroupAssignTabs();
+  renderGroupAssignContent();
+}
+
+function saveCurrentGroupTabInputs() {
+  const entryId = groupAssignEntries[activeGroupTab];
+  if (!entryId) return;
+  const entry = queue.find(e => String(e.id) === entryId);
+  if (!entry) return;
+  const rows = document.querySelectorAll('#group-assign-content [data-service-id]');
+  if (rows.length === 0) return;
+  entry.assignments = Array.from(rows).map(row => ({
+    serviceId: row.dataset.serviceId,
+    techId: row.querySelector('.assign-tech')?.value || '',
+    station: row.querySelector('.assign-station')?.value || '',
+    cost: parseFloat(row.querySelector('.assign-cost')?.value) || 0,
+  }));
+  entry.services = entry.assignments.map(a => a.serviceId);
+  entry.totalCost = entry.assignments.reduce((a, b) => a + b.cost, 0);
+}
+
+function renderGroupAssignContent() {
+  const entryId = groupAssignEntries[activeGroupTab];
+  const entry = queue.find(e => String(e.id) === entryId);
+  if (!entry) return;
+
+  const color = entry.groupColor || '#1a5252';
+  const stations = [
+    ...Array.from({length:12}, (_,i) => `P${i+1}`),
+    ...Array.from({length:15}, (_,i) => `M${i+1}`),
+  ];
+
+  const content = document.getElementById('group-assign-content');
+  const serviceRows = entry.services.map(sid => {
+    const svc = SERVICES.find(s => s.id === sid) || { id: sid, label: sid };
+    const assignment = (entry.assignments || []).find(a => a.serviceId === sid) || {};
+    const techOptions = STAFF.map(st =>
+      `<option value="${st.id}" ${assignment.techId === st.id ? 'selected' : ''}>${st.name}</option>`
+    ).join('');
+    const stationOptions = stations.map(st =>
+      `<option value="${st}" ${assignment.station === st ? 'selected' : ''}>${st}</option>`
+    ).join('');
+    return `
+      <div class="bg-surface-container-low rounded-xl p-4 border border-surface-container-high mb-3" data-service-id="${sid}">
+        <div class="font-headline font-semibold text-on-surface mb-3">${svc.label}</div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Technician</label>
+            <select class="assign-tech w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="updateGroupTotal()">
+              <option value="">— Unassigned —</option>${techOptions}
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Station</label>
+            <select class="assign-station w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary">
+              <option value="">— None —</option>${stationOptions}
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Cost ($)</label>
+            <input type="number" min="0" step="0.01" placeholder="0.00" value="${assignment.cost || ''}"
+              class="assign-cost w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary"
+              oninput="updateGroupTotal()">
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Service picker for this guest
+  const svcPicker = SERVICES.map(s => {
+    const selected = entry.services.includes(s.id);
+    return `
+      <button type="button" onclick="toggleGroupService('${s.id}')" id="gsvc-btn-${s.id}"
+        class="service-btn flex flex-col items-center justify-center py-2 rounded-lg border transition-all text-xs ${selected ? 'text-white border-transparent selected' : 'bg-surface-container text-on-surface-variant border-outline-variant/30'}"
+        style="${selected ? `background:${color}; border-color:${color}` : ''}">
+        <span class="font-headline font-bold">${s.abbr}</span>
+        <span class="text-[9px] font-body mt-0.5 uppercase tracking-tighter leading-tight text-center">${s.label}</span>
+      </button>
+    `;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:${color}"></span>
+      <span class="font-headline font-bold text-on-surface">${entry.name}</span>
+      ${entry.groupLabel ? `<span class="text-[10px] font-body italic" style="color:${color}">${entry.groupLabel}</span>` : ''}
+    </div>
+    <div class="mb-1">
+      <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-2">Services</label>
+      <div class="grid grid-cols-4 gap-2 mb-4">${svcPicker}</div>
+    </div>
+    ${serviceRows}
+    <div class="border-t border-surface-container-high pt-3 flex items-center justify-between">
+      <span class="font-body font-semibold text-on-surface text-sm">Subtotal</span>
+      <span id="group-subtotal" class="font-headline font-bold text-primary">$0.00</span>
+    </div>
+  `;
+  updateGroupTotal();
+}
+
+function toggleGroupService(sid) {
+  const entryId = groupAssignEntries[activeGroupTab];
+  const entry = queue.find(e => String(e.id) === entryId);
+  if (!entry) return;
+  const color = entry.groupColor || '#1a5252';
+
+  if (entry.services.includes(sid)) {
+    if (entry.services.length === 1) { showToast('At least one service required.'); return; }
+    entry.services = entry.services.filter(id => id !== sid);
+    if (entry.assignments) entry.assignments = entry.assignments.filter(a => a.serviceId !== sid);
+  } else {
+    entry.services.push(sid);
+  }
+  // Re-render content with updated services
+  renderGroupAssignContent();
+}
+
+function updateGroupTotal() {
+  const costs = [...document.querySelectorAll('#group-assign-content .assign-cost')].map(i => parseFloat(i.value) || 0);
+  const total = costs.reduce((a, b) => a + b, 0);
+  const el = document.getElementById('group-subtotal');
+  if (el) el.textContent = `$${total.toFixed(2)}`;
+}
+
+function closeGroupAssignModal() {
+  document.getElementById('group-assign-modal').classList.add('hidden');
+  document.getElementById('group-assign-modal').style.display = '';
+  groupAssignEntries = [];
+}
+
+function collectGroupAssignments() {
+  // Save current tab first
+  saveCurrentGroupTabInputs();
+  // Return all entries
+  return groupAssignEntries.map(id => queue.find(e => String(e.id) === id)).filter(Boolean);
+}
+
+function validateGroupAssignments(entries) {
+  const incomplete = entries.filter(e =>
+    !e.assignments || e.assignments.length === 0 ||
+    e.assignments.some(a => !a.techId || a.cost <= 0)
+  );
+  return incomplete;
+}
+
+function saveGroupAssignments() {
+  const entries = collectGroupAssignments();
+  entries.forEach(e => updateSheetsRow(e));
+  closeGroupAssignModal();
+  renderQueue();
+  showToast('Assignments saved');
+}
+
+function saveGroupAndAdvance() {
+  const entries = collectGroupAssignments();
+  const first = entries[0];
+  if (!first) return;
+  const targetStatus = first.status === 'inservice' ? 'done' : 'inservice';
+
+  if (targetStatus === 'done') {
+    const incomplete = validateGroupAssignments(entries);
+    if (incomplete.length > 0) {
+      showToast(`${incomplete.map(e=>e.name.split(' ')[0]).join(', ')} missing tech or price.`);
+      return;
+    }
+  }
+
+  entries.forEach(e => {
+    e.status = targetStatus;
+    if (targetStatus === 'done') saveRecord(e);
+    updateSheetsRow(e);
+  });
+  closeGroupAssignModal();
+  renderQueue();
+  updateStats();
+  showToast(`Moved to ${targetStatus === 'done' ? 'Done' : 'In Service'}`);
+}
+
+async function saveGroupAndPushSquare() {
+  const entries = collectGroupAssignments();
+  const incomplete = validateGroupAssignments(entries);
+  if (incomplete.length > 0) {
+    // Show toast but DO NOT close modal
+    showToast(`${incomplete.map(e=>e.name.split(' ')[0]).join(', ')} missing tech or price.`);
+    return;
+  }
+  // Keep modal open during push, close after success
+  showToast('Pushing to Square…');
+  for (const e of entries) {
+    updateSheetsRow(e);
+    await pushOrderToSquare(e);
+  }
+  closeGroupAssignModal();
+  renderQueue();
+}
+
+// ── Split Modal ───────────────────────────────────
+function showSplitMergeModal(entryId) {
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry || !entry.groupId) return;
+  const groupMembers = queue.filter(e => e.groupId === entry.groupId);
+  const color = entry.groupColor;
+
+  document.getElementById('split-merge-title').textContent = 'Split Party';
+  document.getElementById('split-merge-content').innerHTML = `
+    <p class="text-sm font-body text-on-surface-variant mb-4">Select guests to split into a separate ticket. They will keep their services but be unlinked from the group.</p>
+    <div class="space-y-2 mb-5">
+      ${groupMembers.map(m => `
+        <label class="flex items-center gap-3 p-3 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+          <input type="checkbox" id="split-cb-${m.id}" class="w-4 h-4 accent-primary" ${String(m.id) === String(entryId) ? '' : ''}>
+          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${color}"></span>
+          <div>
+            <div class="font-headline font-semibold text-on-surface text-sm">${m.name}</div>
+            ${m.groupLabel ? `<div class="text-[10px] font-body italic text-outline">${m.groupLabel}</div>` : ''}
+          </div>
+        </label>
+      `).join('')}
+    </div>
+    <button onclick="executeSplit()" class="w-full bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold transition-all active:scale-95">
+      Split Selected
+    </button>
+  `;
+
+  document.getElementById('split-merge-modal').classList.remove('hidden');
+  document.getElementById('split-merge-modal').style.display = 'flex';
+}
+
+function executeSplit() {
+  const checked = [...document.querySelectorAll('[id^="split-cb-"]:checked')].map(cb => cb.id.replace('split-cb-', ''));
+  if (checked.length === 0) { showToast('Select at least one guest to split.'); return; }
+
+  // Detach selected guests from the group
+  checked.forEach(id => {
+    const e = queue.find(x => String(x.id) === id);
+    if (!e) return;
+    e.groupId = null;
+    e.groupColor = null;
+    e.groupLabel = null;
+  });
+
+  // If only one member left in group, dissolve the group
+  const remaining = queue.filter(e => e.groupId === queue.find(x => !checked.includes(String(x.id)) && x.groupId)?.groupId);
+  if (remaining.length === 1) {
+    remaining[0].groupId = null;
+    remaining[0].groupColor = null;
+    remaining[0].groupLabel = null;
+  }
+
+  closeSplitMergeModal();
+  renderQueue();
+  showToast(`${checked.length} guest${checked.length > 1 ? 's' : ''} split into separate ticket${checked.length > 1 ? 's' : ''}`);
+}
+
+function closeSplitMergeModal() {
+  document.getElementById('split-merge-modal').classList.add('hidden');
+  document.getElementById('split-merge-modal').style.display = '';
+}
+
+// ── Merge Select Modal ────────────────────────────
+function showMergeSelectModal(entryId) {
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+
+  // Show all other queue entries (excluding done and this entry)
+  const candidates = queue.filter(e =>
+    String(e.id) !== String(entryId) && e.status !== 'done'
+  );
+
+  document.getElementById('split-merge-title').textContent = 'Merge with Guest';
+  document.getElementById('split-merge-content').innerHTML = `
+    <p class="text-sm font-body text-on-surface-variant mb-4">Select a guest to merge with <strong>${entry.name}</strong>. They will be linked as a party with a shared color.</p>
+    <div class="space-y-2 mb-5 max-h-64 overflow-y-auto no-scroll">
+      ${candidates.length === 0 ? '<p class="text-sm font-body text-on-surface-variant text-center py-4">No other guests in queue.</p>' :
+        candidates.map(c => `
+          <label class="flex items-center gap-3 p-3 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+            <input type="radio" name="merge-pick" value="${c.id}" class="w-4 h-4 accent-primary">
+            ${c.groupColor ? `<span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${c.groupColor}"></span>` : '<span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-outline-variant"></span>'}
+            <div>
+              <div class="font-headline font-semibold text-on-surface text-sm">${c.name}</div>
+              <div class="text-[11px] font-body text-on-surface-variant">${c.services.map(sid => SERVICES.find(s=>s.id===sid)?.label||sid).join(', ') || '—'}</div>
+            </div>
+          </label>
+        `).join('')
+      }
+    </div>
+    ${candidates.length > 0 ? `
+    <button onclick="executeMerge('${entryId}')" class="w-full bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold transition-all active:scale-95">
+      Merge
+    </button>` : ''}
+  `;
+
+  document.getElementById('split-merge-modal').classList.remove('hidden');
+  document.getElementById('split-merge-modal').style.display = 'flex';
+}
+
+function executeMerge(entryId) {
+  const targetId = document.querySelector('[name="merge-pick"]:checked')?.value;
+  if (!targetId) { showToast('Please select a guest to merge with.'); return; }
+
+  const entry  = queue.find(e => String(e.id) === String(entryId));
+  const target = queue.find(e => String(e.id) === String(targetId));
+  if (!entry || !target) return;
+
+  // Use existing group if target already has one, otherwise create new
+  const groupId    = target.groupId || entry.groupId || `grp-${Date.now()}`;
+  const groupColor = target.groupColor || entry.groupColor || GROUP_COLORS[groupColorIndex++ % GROUP_COLORS.length];
+
+  // Collect all members of both groups
+  const allMembers = queue.filter(e =>
+    String(e.id) === String(entryId) ||
+    String(e.id) === String(targetId) ||
+    (e.groupId && (e.groupId === entry.groupId || e.groupId === target.groupId))
+  );
+
+  // Assign group data; first member becomes primary
+  const primaryName = allMembers[0].name;
+  allMembers.forEach((m, i) => {
+    m.groupId    = groupId;
+    m.groupColor = groupColor;
+    m.groupLabel = i === 0
+      ? `${m.name} (primary)`
+      : `${primaryName} — ${m.name}`;
+  });
+
+  closeSplitMergeModal();
+  renderQueue();
+  showToast(`${entry.name} & ${target.name} merged into a party`);
+}
+function showWarnModal(title, body, onConfirm) {
+  document.getElementById('warn-title').textContent = title;
+  document.getElementById('warn-body').textContent = body;
+  const btn = document.getElementById('warn-confirm-btn');
+  btn.onclick = () => { closeWarnModal(); onConfirm(); };
+  document.getElementById('warn-modal').classList.remove('hidden');
+  document.getElementById('warn-modal').style.display = 'flex';
+}
+
+function closeWarnModal() {
+  document.getElementById('warn-modal').classList.add('hidden');
+  document.getElementById('warn-modal').style.display = '';
+}
+
+function confirmReopen(entryId) {
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+  showWarnModal(
+    'Reopen this ticket?',
+    `This will move ${entry.name} back to "In Service." Any changes will update Google Sheets. This cannot be undone automatically.`,
+    () => {
+      entry.status = 'inservice';
+      updateSheetsRow(entry);
+      renderQueue();
+      updateStats();
+      showToast(`${entry.name}'s ticket reopened`);
+    }
+  );
+}
 function showSquareModal() {
   if (squareConfig) {
     document.getElementById('sq-location').value = squareConfig.locationId || '';
@@ -1298,13 +3433,117 @@ async function syncSquare() {
   updateSyncLabel('pending', 'Syncing…');
   showToast('Syncing with Square…');
   try {
-    // Pull customers from Square
-    await squarePullCustomers();
+    await Promise.all([squarePullCustomers(), squarePullServices()]);
     updateSyncLabel('ok', 'Square synced');
     showToast('Square sync complete');
   } catch(e) {
     updateSyncLabel('error', 'Sync failed');
     showToast('Square sync failed. Check settings.');
+  }
+}
+
+// Pull catalog items from Square and merge into SERVICES
+async function squarePullServices() {
+  if (!squareConfig) return;
+  try {
+    const res = await fetch(`${SQUARE_PROXY}/v2/catalog/list?types=ITEM`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const items = data.objects || [];
+    let added = 0;
+    items.forEach(item => {
+      const name = item.item_data?.name;
+      if (!name) return;
+      const id = `sq-${item.id}`;
+      if (!SERVICES.find(s => s.id === id || s.label.toLowerCase() === name.toLowerCase())) {
+        const abbr = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 4);
+        SERVICES.push({ id, label: name, abbr, squareItemId: item.id });
+        added++;
+      }
+    });
+    if (added > 0) {
+      saveServicesToStorage();
+      showToast(`${added} service${added > 1 ? 's' : ''} imported from Square`);
+    }
+  } catch(e) {
+    console.warn('Could not pull Square catalog:', e);
+  }
+}
+
+// Push an order to Square for easy checkout
+async function pushOrderToSquare(entry) {
+  if (!squareConfig) { showToast('Square not configured.'); return; }
+  if (!squareConfig.locationId) { showToast('Location ID missing in Square settings.'); return; }
+
+  const lineItems = (entry.assignments || [])
+    .filter(a => a.cost > 0)
+    .map(a => {
+      const svc  = SERVICES.find(s => s.id === a.serviceId);
+      const tech = STAFF.find(s => s.id === a.techId);
+      return {
+        name: [svc?.label || 'Service', tech ? `(${tech.name})` : ''].filter(Boolean).join(' '),
+        quantity: '1',
+        base_price_money: { amount: Math.round(a.cost * 100), currency: 'USD' },
+      };
+    });
+
+  if (lineItems.length === 0) {
+    showToast('Add at least one priced service before pushing to Square.');
+    return;
+  }
+
+  showToast('Pushing to Square…');
+
+  try {
+    // First try to find the customer in Square by phone
+    let customerId = null;
+    if (entry.phone) {
+      const cleanPhone = entry.phone.replace(/\D/g, '');
+      const searchRes = await fetch(`${SQUARE_PROXY}/v2/customers/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: { filter: { phone_number: { exact: entry.phone } } } }),
+      });
+      if (searchRes.ok) {
+        const sd = await searchRes.json();
+        customerId = sd?.customers?.[0]?.id || null;
+      }
+    }
+
+    const orderBody = {
+      idempotency_key: `muse-order-${String(entry.id).replace('.', '')}-${Date.now()}`,
+      order: {
+        location_id: squareConfig.locationId,
+        line_items: lineItems,
+        reference_id: `muse-${entry.name.slice(0,10).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}`,
+        ...(customerId ? { customer_id: customerId } : {}),
+      },
+    };
+
+    const orderRes = await fetch(`${SQUARE_PROXY}/v2/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderBody),
+    });
+
+    if (orderRes.ok) {
+      const od = await orderRes.json();
+      const orderId = od?.order?.id;
+      const total = od?.order?.total_money?.amount;
+      const totalDisplay = total != null ? ` · Total $${(total/100).toFixed(2)}` : '';
+      showToast(`✓ Order in Square${totalDisplay}`);
+      // Store square order ID on entry for reference
+      entry.squareOrderId = orderId;
+      renderQueue();
+    } else {
+      const err = await orderRes.json();
+      const msg = err?.errors?.[0]?.detail || err?.errors?.[0]?.code || 'Unknown error';
+      showToast(`Square error: ${msg}`);
+      console.error('Square order error:', err);
+    }
+  } catch(e) {
+    console.error('Square order push failed:', e);
+    showToast('Could not reach Square. Check proxy.');
   }
 }
 
@@ -1318,36 +3557,58 @@ async function squarePullCustomers() {
 async function squareUpsertCustomer(entry) {
   if (!squareConfig || !entry.phone) return;
   try {
-    // Search for existing customer by phone
-    const searchRes = await fetch(`${SQUARE_PROXY}/v2/customers/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: { filter: { phone_number: { exact: entry.phone } } }
-      })
-    });
-    const searchData = await searchRes.json();
-    const existing = searchData?.customers?.[0];
+    const rawPhone = entry.phone.replace(/\D/g, '');
+
+    // Check local cache first (already loaded for autocomplete)
+    let existingId = null;
+    if (squareCustomers.length > 0) {
+      const cached = squareCustomers.find(c => {
+        const cp = c.phone.replace(/\D/g, '').replace(/^1(\d{10})$/, '$1');
+        return cp === rawPhone || cp === rawPhone.replace(/^1/, '');
+      });
+      if (cached) existingId = cached.id;
+    }
+
+    // If not in cache, search Square
+    if (!existingId) {
+      const searchRes = await fetch(`${SQUARE_PROXY}/v2/customers/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: { filter: { phone_number: { exact: entry.phone } } }
+        })
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        existingId = searchData?.customers?.[0]?.id || null;
+      }
+    }
 
     const nameParts = entry.name.split(' ');
+    const svcLabels = entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', ');
     const payload = {
       given_name: nameParts[0] || '',
-      family_name: nameParts[1] || '',
+      family_name: nameParts.slice(1).join(' ') || '',
       phone_number: entry.phone,
-      note: `Last check-in: ${new Date().toLocaleDateString()} | Services: ${entry.services.join(', ')}`
+      note: `Last check-in: ${new Date().toLocaleDateString()} | Services: ${svcLabels}`
     };
 
-    if (existing) {
-      await fetch(`${SQUARE_PROXY}/v2/customers/${existing.id}`, {
+    if (existingId) {
+      // Update existing — never creates a duplicate
+      await fetch(`${SQUARE_PROXY}/v2/customers/${existingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
+      // Create new with idempotency key based on phone so repeated calls don't duplicate
       await fetch(`${SQUARE_PROXY}/v2/customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idempotency_key: `muse-${Date.now()}`, ...payload })
+        body: JSON.stringify({
+          idempotency_key: `muse-customer-${rawPhone}`,
+          ...payload
+        })
       });
     }
   } catch(e) {
@@ -1376,18 +3637,7 @@ function showToast(msg) {
   }, 3000);
 }
 
-// ── Square settings button in desk header ────────
-document.addEventListener('DOMContentLoaded', () => {
-  const header = document.querySelector('#screen-desk header .flex.items-center.gap-3:last-child');
-  if (header) {
-    const sqBtn = document.createElement('button');
-    sqBtn.title = 'Square Settings';
-    sqBtn.className = 'flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors';
-    sqBtn.innerHTML = '<span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">settings</span>';
-    sqBtn.onclick = showSquareModal;
-    header.insertBefore(sqBtn, header.firstChild);
-  }
-});
+
 </script>
 
 </body>
