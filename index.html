@@ -1945,7 +1945,7 @@ function submitManualAdd() {
 
 // ── Google Sheets Export ──────────────────────────
 async function exportToSheets(entry) {
-  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbyuC3vCpoH7sXiTaHgCLQBPHmGGxqhP4vwQxzfSFFY3EQkaKJWom79fTrSGkegXXdtM/exec`;
   try {
     const row = {
       action: 'append',
@@ -2025,7 +2025,7 @@ async function updateSheetsRow(entry) {
       body: JSON.stringify(payload),
     }).catch(() => {
       // Fallback: direct fetch with no-cors if proxy path fails
-      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbyuC3vCpoH7sXiTaHgCLQBPHmGGxqhP4vwQxzfSFFY3EQkaKJWom79fTrSGkegXXdtM/exec`;
       return fetch(SHEETS_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
@@ -2423,7 +2423,7 @@ function exportReportExcel() {
 async function exportReportSheets() {
   const d = window._currentReportData;
   if (!d || d.filtered.length === 0) { showToast('No data to export.'); return; }
-  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbyuC3vCpoH7sXiTaHgCLQBPHmGGxqhP4vwQxzfSFFY3EQkaKJWom79fTrSGkegXXdtM/exec`;
   showToast('Exporting report to Google Sheets…');
   try {
     const payload = {
