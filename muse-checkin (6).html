@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Muse Nails & Spa — Check-In</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#2a6868",
+        "primary-dim": "#1a5c5c",
+        "primary-container": "#b0eeed",
+        "on-primary": "#e0fffe",
+        "on-primary-container": "#185b5a",
+        secondary: "#785a1a",
+        "secondary-container": "#ffdea5",
+        "on-secondary-container": "#694d0c",
+        surface: "#f8f9fa",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#f1f4f5",
+        "surface-container": "#ebeef0",
+        "surface-container-high": "#e5e9eb",
+        "surface-container-highest": "#dee3e6",
+        "on-surface": "#2d3335",
+        "on-surface-variant": "#5a6062",
+        outline: "#767c7e",
+        "outline-variant": "#adb3b5",
+        error: "#a83836",
+        "error-container": "#fa746f",
+      },
+      fontFamily: {
+        headline: ["Manrope"],
+        body: ["Inter"],
+      },
+      borderRadius: {
+        xl: "0.75rem",
+        "2xl": "1rem",
+        full: "9999px",
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+  h1,h2,h3,.font-headline { font-family: 'Manrope', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+
+  /* Screen transitions */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* Clock */
+  #clock-display { font-variant-numeric: tabular-nums; }
+
+  /* Service button selected state */
+  .service-btn.selected {
+    background-color: #2a6868 !important;
+    color: #e0fffe !important;
+    border-color: #2a6868 !important;
+  }
+
+  /* Scrollbar hide */
+  .no-scroll::-webkit-scrollbar { display: none; }
+  .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Queue badge pulse */
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(42,104,104,0.35); }
+    70% { box-shadow: 0 0 0 8px rgba(42,104,104,0); }
+    100% { box-shadow: 0 0 0 0 rgba(42,104,104,0); }
+  }
+  .pulse { animation: pulse-ring 2s infinite; }
+
+  /* Fade in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease forwards; }
+
+  /* Status badges */
+  .badge-waiting { background: #ffdea5; color: #694d0c; }
+  .badge-inservice { background: #b0eeed; color: #185b5a; }
+  .badge-done { background: #dee3e6; color: #5a6062; }
+  .badge-appointment { background: #2a6868; color: #e0fffe; }
+
+  /* Autocomplete dropdown */
+  .autocomplete-list {
+    position: absolute; z-index: 200;
+    background: #ffffff; border: 1px solid #e5e9eb;
+    border-radius: 0.75rem; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    max-height: 220px; overflow-y: auto;
+    width: 100%; top: calc(100% + 4px); left: 0;
+  }
+  .autocomplete-item {
+    padding: 10px 14px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 14px;
+    color: #2d3335; transition: background 0.1s;
+    border-bottom: 1px solid #f1f4f5;
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover { background: #f1f4f5; }
+  .autocomplete-item .ac-name { font-weight: 600; font-family: 'Manrope', sans-serif; }
+  .autocomplete-item .ac-phone { font-size: 11px; color: #767c7e; margin-top: 1px; }
+  .ac-input-wrap { position: relative; }
+
+  /* Square sync indicator */
+  .sync-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .sync-dot.ok { background:#2a6868; }
+  .sync-dot.pending { background:#f8cf83; }
+  .sync-dot.error { background:#a83836; }
+
+  /* iPad optimized touch targets */
+  button { min-height: 44px; }
+
+  /* Subtle noise texture on surface */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -1;
+    background: #f8f9fa;
+    pointer-events: none;
+  }
+
+  /* Input focus */
+  input:focus { outline: none; border-color: #2a6868; }
+  
+  /* Guest card animation */
+  .guest-card { animation: fadeUp 0.3s ease forwards; }
+
+  /* Queue row hover */
+  .queue-row:hover { background: #f1f4f5; }
+  .queue-row { transition: background 0.15s; }
+</style>
+</head>
+<body class="bg-surface text-on-surface select-none">
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 1: WELCOME (Customer-Facing)
+═══════════════════════════════════════════════ -->
+<div id="screen-welcome" class="screen active items-center justify-between px-6 py-10 text-center">
+
+  <!-- Logo -->
+  <div class="flex flex-col items-center fade-up">
+    <img id="logo-welcome" src="" alt="Muse Nails & Spa"
+         class="h-64 md:h-72 w-auto object-contain mx-auto"
+         onerror="this.style.display='none'; document.getElementById('logo-text-welcome').style.display='block'">
+    <div id="logo-text-welcome" style="display:none" class="text-center">
+      <div class="text-5xl font-headline font-bold tracking-widest text-on-surface">MUSE</div>
+      <div class="text-xs font-body tracking-[0.3em] text-secondary uppercase mt-1">Nails &amp; Spa</div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="w-full max-w-md flex flex-col gap-5 fade-up" style="animation-delay:0.1s">
+
+    <button onclick="goTo('screen-checkin', 'walkin')"
+      class="group flex items-center justify-between w-full px-8 py-7 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 active:scale-[0.98]">
+      <div class="flex flex-col items-start text-left">
+        <span class="text-[10px] font-headline font-bold tracking-widest text-secondary uppercase mb-1">No Appointment</span>
+        <span class="text-2xl font-headline font-bold text-on-surface">Walk-In Check-In</span>
+      </div>
+      <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-on-primary group-hover:translate-x-1 transition-transform">
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </div>
+    </button>
+
+    <button onclick="goTo('screen-checkin', 'appointment')"
+      class="group flex items-center justify-between w-full px-8 py-7 rounded-xl bg-primary bg-gradient-to-br from-primary to-primary-dim shadow-xl shadow-primary/20 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]">
+      <div class="flex flex-col items-start text-left">
+        <span class="text-[10px] font-headline font-bold tracking-widest text-primary-container uppercase mb-1">Pre-Booked</span>
+        <span class="text-2xl font-headline font-bold text-on-primary">Appointment Check-In</span>
+      </div>
+      <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container group-hover:translate-x-1 transition-transform">
+        <span class="material-symbols-outlined">calendar_today</span>
+      </div>
+    </button>
+
+  </div>
+
+  <!-- Clock + front desk lock -->
+  <div class="flex flex-col items-center gap-1 fade-up" style="animation-delay:0.2s">
+    <span id="clock-display" class="text-5xl font-headline font-extrabold text-on-surface tracking-tight">00:00</span>
+    <span id="date-display" class="text-xs font-body font-medium text-on-surface-variant tracking-widest uppercase"></span>
+  </div>
+
+  <!-- Front desk access (bottom-right) -->
+  <div class="fixed bottom-6 right-6">
+    <button onclick="showPinModal()" title="Staff Access"
+      class="flex items-center justify-center w-12 h-12 bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant rounded-xl shadow-sm transition-colors">
+      <span class="material-symbols-outlined">lock</span>
+    </button>
+  </div>
+
+  <!-- Ambient gradient -->
+  <div class="fixed inset-0 -z-10 pointer-events-none">
+    <div class="absolute bottom-0 right-0 w-2/3 h-2/3 bg-gradient-to-tl from-surface-container-low/40 to-transparent"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 2: CHECK-IN FORM (Customer-Facing)
+═══════════════════════════════════════════════ -->
+<div id="screen-checkin" class="screen flex-col items-center bg-surface">
+
+  <!-- Header -->
+  <header class="w-full max-w-3xl px-6 pt-6 pb-2 flex items-center justify-between">
+    <button onclick="goTo('screen-welcome')" class="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors text-sm font-body">
+      <span class="material-symbols-outlined text-lg">arrow_back</span>
+      Back
+    </button>
+    <img id="logo-checkin" src="" alt="Muse" class="h-14 w-auto object-contain"
+         onerror="this.style.display='none'; document.getElementById('logo-text-checkin').style.display='block'">
+    <div id="logo-text-checkin" style="display:none" class="text-right">
+      <div class="text-lg font-headline font-bold tracking-widest">MUSE</div>
+      <div class="text-[9px] tracking-[0.25em] text-secondary uppercase">Nails &amp; Spa</div>
+    </div>
+    <div class="w-16"></div><!-- spacer -->
+  </header>
+
+  <!-- Checkin type label -->
+  <div class="w-full max-w-3xl px-6 mb-4">
+    <p id="checkin-type-label" class="text-xs font-body font-semibold tracking-widest text-secondary uppercase"></p>
+  </div>
+
+  <!-- Guests container -->
+  <main class="w-full max-w-3xl px-6 pb-40 overflow-y-auto no-scroll flex-grow" id="guests-container">
+    <!-- Guest cards + add button injected here -->
+  </main>
+
+  <!-- Sticky CTA -->
+  <footer class="fixed bottom-0 left-0 right-0 p-6 flex justify-center pointer-events-none">
+    <div class="w-full max-w-md pointer-events-auto">
+      <button onclick="submitCheckin()"
+        class="w-full bg-primary hover:bg-primary-dim text-on-primary py-5 rounded-xl font-headline font-bold text-lg tracking-tight shadow-2xl shadow-primary/30 transition-all duration-300 active:scale-95 flex items-center justify-center gap-3">
+        <span>Check In</span>
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Ambient -->
+  <div class="fixed top-0 right-0 -z-10 w-[50vw] h-96 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 3: CONFIRMATION (Customer-Facing)
+═══════════════════════════════════════════════ -->
+<div id="screen-confirm" class="screen flex-col items-center justify-center text-center px-8 py-16">
+  <div class="fade-up">
+    <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-6">
+      <span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings:'FILL' 1,'wght' 400">check_circle</span>
+    </div>
+    <h1 class="text-4xl font-headline font-bold text-on-surface mb-2">You're checked in!</h1>
+    <p id="confirm-name" class="text-on-surface-variant font-body mb-8 text-lg"></p>
+    <p class="text-sm text-on-surface-variant font-body max-w-xs mx-auto">Please have a seat — a technician will be right with you.</p>
+  </div>
+  <div class="fixed bottom-8 w-full flex justify-center">
+    <button onclick="goTo('screen-welcome')" class="text-sm text-on-surface-variant hover:text-on-surface font-body underline underline-offset-2 transition-colors">
+      Check in another guest
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 4: FRONT DESK / QUEUE
+═══════════════════════════════════════════════ -->
+<div id="screen-desk" class="screen flex-col bg-surface min-h-screen">
+
+  <!-- Top bar -->
+  <header class="w-full px-6 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between sticky top-0 z-10">
+    <div class="flex items-center gap-3">
+      <img id="logo-desk" src="" alt="Muse" class="h-10 w-auto object-contain"
+           onerror="this.style.display='none'">
+      <div>
+        <div class="text-base font-headline font-bold text-on-surface">Front Desk</div>
+        <div class="text-[11px] font-body text-on-surface-variant tracking-wide" id="desk-date"></div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Square sync status -->
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant">
+        <span class="sync-dot ok" id="sync-dot"></span>
+        <span id="sync-label">Square synced</span>
+      </div>
+      <button onclick="syncSquare()" title="Sync with Square" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">sync</span>
+      </button>
+      <button onclick="exportAllToSheets()" title="Export to Google Sheets" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">upload_file</span>
+      </button>
+      <button onclick="goTo('screen-welcome')" title="Customer Screen" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">tablet</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats row -->
+  <div class="px-6 py-4 grid grid-cols-3 gap-3" id="stats-row">
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+      <div class="text-3xl font-headline font-extrabold text-primary" id="stat-waiting">0</div>
+      <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Waiting</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+      <div class="text-3xl font-headline font-extrabold text-on-surface" id="stat-inservice">0</div>
+      <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">In Service</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+      <div class="text-3xl font-headline font-extrabold text-on-surface-variant" id="stat-done">0</div>
+      <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Done Today</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="px-6 flex gap-2 mb-3">
+    <button onclick="filterQueue('all')" id="tab-all" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-primary text-on-primary transition-all">All</button>
+    <button onclick="filterQueue('waiting')" id="tab-waiting" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Waiting</button>
+    <button onclick="filterQueue('inservice')" id="tab-inservice" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">In Service</button>
+    <button onclick="filterQueue('done')" id="tab-done" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Done</button>
+    <!-- Manual add -->
+    <button onclick="showManualAdd()" class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container-lowest border border-outline-variant/40 hover:bg-surface-container transition-all text-on-surface">
+      <span class="material-symbols-outlined" style="font-size:16px">person_add</span>
+      Add
+    </button>
+  </div>
+
+  <!-- Queue list -->
+  <main class="flex-grow overflow-y-auto no-scroll px-6 pb-6">
+    <div id="queue-list" class="space-y-2"></div>
+    <div id="queue-empty" class="hidden text-center py-16 text-on-surface-variant text-sm font-body">
+      <span class="material-symbols-outlined text-4xl block mb-3 opacity-30">group</span>
+      No guests yet today
+    </div>
+  </main>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     PIN MODAL
+═══════════════════════════════════════════════ -->
+<div id="pin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-8 w-80 shadow-2xl fade-up">
+    <h2 class="text-xl font-headline font-bold text-on-surface text-center mb-1">Staff Access</h2>
+    <p class="text-xs font-body text-on-surface-variant text-center mb-6">Enter PIN to access front desk</p>
+    <div class="flex gap-3 justify-center mb-6">
+      <div id="pin-dots" class="flex gap-2">
+        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
+        <div class="pin-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all"></div>
+      </div>
+    </div>
+    <!-- Numpad -->
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <button onclick="pinInput('1')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">1</button>
+      <button onclick="pinInput('2')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">2</button>
+      <button onclick="pinInput('3')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">3</button>
+      <button onclick="pinInput('4')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">4</button>
+      <button onclick="pinInput('5')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">5</button>
+      <button onclick="pinInput('6')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">6</button>
+      <button onclick="pinInput('7')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">7</button>
+      <button onclick="pinInput('8')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">8</button>
+      <button onclick="pinInput('9')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">9</button>
+      <button onclick="pinCancel()" class="h-14 rounded-xl text-sm font-body text-on-surface-variant hover:bg-surface-container transition-all">Cancel</button>
+      <button onclick="pinInput('0')" class="numpad-btn h-14 rounded-xl bg-surface-container text-xl font-headline font-semibold hover:bg-surface-container-high active:scale-95 transition-all">0</button>
+      <button onclick="pinBackspace()" class="h-14 rounded-xl text-on-surface-variant hover:bg-surface-container transition-all flex items-center justify-center">
+        <span class="material-symbols-outlined">backspace</span>
+      </button>
+    </div>
+    <p id="pin-error" class="text-xs text-error text-center font-body hidden">Incorrect PIN. Try again.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     MANUAL ADD MODAL (Front Desk)
+═══════════════════════════════════════════════ -->
+<div id="manual-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-lg shadow-2xl fade-up mx-4 max-h-[90vh] overflow-y-auto no-scroll">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Add Guest</h2>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <div class="relative">
+            <input type="checkbox" id="manual-is-appointment" class="sr-only peer">
+            <div class="w-5 h-5 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-primary hidden peer-checked:block" style="font-size:13px;font-variation-settings:'FILL' 1,'wght' 600">check</span>
+            </div>
+          </div>
+          <span class="text-sm font-body text-on-surface-variant flex items-center gap-1">
+            <span class="material-symbols-outlined" style="font-size:15px">calendar_today</span> Appointment
+          </span>
+        </label>
+        <button onclick="closeManualAdd()" class="text-on-surface-variant hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary guest -->
+    <div id="manual-guests-container" class="space-y-5">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Add another guest -->
+    <div class="flex justify-center mt-3">
+      <button onclick="addManualGuest()" class="flex items-center gap-2 text-secondary hover:text-on-secondary-container px-5 py-2 rounded-full hover:bg-secondary-container text-sm font-body font-semibold transition-colors">
+        <span class="material-symbols-outlined text-lg">person_add</span>
+        Add another guest
+      </button>
+    </div>
+
+    <button onclick="submitManualAdd()" class="w-full mt-5 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
+      Add to Queue
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SQUARE CONFIG MODAL
+═══════════════════════════════════════════════ -->
+<div id="square-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
+  <div class="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Square Integration</h2>
+      <button onclick="document.getElementById('square-modal').classList.add('hidden'); document.getElementById('square-modal').style.display=''" class="text-on-surface-variant hover:text-on-surface">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <p class="text-sm font-body text-on-surface-variant mb-6">Enter your Square Location ID to sync customer data. Your access token is securely stored in the proxy.</p>
+    <div class="space-y-4">
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">Location ID</label>
+        <input id="sq-location" type="text" placeholder="LXXXXXXXXXXXXXXXXX"
+          class="w-full border-b border-surface-container-high bg-transparent py-2 text-sm font-body focus:border-primary transition-colors placeholder:text-surface-container-highest">
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveSquareConfig()" class="flex-1 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
+        Save & Connect
+      </button>
+      <button onclick="testSquareConnection()" class="flex-1 border border-outline-variant/50 hover:bg-surface-container text-on-surface-variant py-4 rounded-xl font-headline font-semibold tracking-tight transition-all">
+        Test Connection
+      </button>
+    </div>
+    <div id="sq-status" class="mt-3 text-sm font-body text-center hidden"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     TOAST
+═══════════════════════════════════════════════ -->
+<div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] hidden">
+  <div class="bg-on-surface text-surface px-5 py-3 rounded-xl text-sm font-body font-medium shadow-2xl fade-up" id="toast-text"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+// ── Config ──────────────────────────────────────
+const STAFF_PIN = "1234"; // Change this in production
+const LOGO_PATH = "/mnt/user-data/uploads/Transparent_B_W_Logo.png";
+const SQUARE_PROXY = "https://musesquareapi.cpacheco847.workers.dev/square";
+const SHEETS_ID = "1mQJMMu312mIifYhEvMNAksX9P7LV3yLNzTZuljCiOuM";
+const SERVICES = [
+  { id: "manicure", label: "Manicure", abbr: "M" },
+  { id: "pedicure", label: "Pedicure", abbr: "P" },
+  { id: "fullset",  label: "Full Set",  abbr: "FS" },
+  { id: "fill",     label: "Fill",      abbr: "FI" },
+  { id: "dip",      label: "Dip",       abbr: "D" },
+  { id: "polish",   label: "Polish Change", abbr: "PC" },
+  { id: "wax",      label: "Wax",       abbr: "W" },
+  { id: "other",    label: "Other",     abbr: "..." },
+];
+
+// ── State ────────────────────────────────────────
+let queue = []; // { id, name, phone, services[], status, checkinTime, isNew, isAppointment }
+let squareCustomers = []; // cached from Square for autocomplete
+let guestCount = 0;
+let currentFilter = 'all';
+let pinBuffer = "";
+let squareConfig = JSON.parse(localStorage.getItem('muse_sq_config') || 'null');
+
+// ── Init ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  setLogo();
+  startClock();
+  renderGuestsContainer();
+  renderQueue();
+  updateDeskDate();
+  if (squareConfig) {
+    updateSyncLabel('ok', 'Square synced');
+    loadSquareCustomers(); // preload for autocomplete
+  } else updateSyncLabel('pending', 'Square not connected');
+
+  // Show Square config if not set
+  setTimeout(() => {
+    if (!squareConfig) showSquareModal();
+  }, 1500);
+});
+
+function setLogo() {
+  // Attempt to load the uploaded logo for all screens
+  ['logo-welcome','logo-checkin','logo-desk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.src = LOGO_PATH;
+  });
+}
+
+// ── Clock ────────────────────────────────────────
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const h = now.getHours() % 12 || 12;
+    const m = now.getMinutes().toString().padStart(2,'0');
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    const clockEl = document.getElementById('clock-display');
+    if (clockEl) clockEl.textContent = `${h}:${m}`;
+
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+    const dateEl = document.getElementById('date-display');
+    if (dateEl) dateEl.textContent = dateStr;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+function updateDeskDate() {
+  const now = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const el = document.getElementById('desk-date');
+  if (el) el.textContent = `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}`;
+}
+
+// ── Navigation ───────────────────────────────────
+let currentCheckinType = 'walkin'; // 'walkin' | 'appointment'
+
+function goTo(screenId, param) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  window.scrollTo(0,0);
+
+  if (screenId === 'screen-checkin') {
+    currentCheckinType = param === 'appointment' ? 'appointment' : 'walkin';
+    guestCount = 0;
+    renderGuestsContainer();
+    const label = document.getElementById('checkin-type-label');
+    if (param === 'appointment') {
+      label.innerHTML = '<span class="inline-flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:14px;color:#785a1a">calendar_today</span> Appointment Check-In</span>';
+    } else {
+      label.textContent = 'Walk-In Check-In';
+    }
+  }
+  if (screenId === 'screen-desk') updateDeskDate();
+}
+
+// ── Guest Card Builder ───────────────────────────
+function renderGuestsContainer() {
+  const container = document.getElementById('guests-container');
+  container.innerHTML = '';
+  guestCount = 0;
+  addGuestCard();
+  renderAddGuestButton();
+}
+
+function renderAddGuestButton() {
+  // Remove existing button if present
+  const existing = document.getElementById('add-guest-btn-row');
+  if (existing) existing.remove();
+  const container = document.getElementById('guests-container');
+  const row = document.createElement('div');
+  row.id = 'add-guest-btn-row';
+  row.className = 'flex justify-center pt-2 pb-2';
+  row.innerHTML = `
+    <button onclick="addGuestCard()" class="group flex items-center gap-2 text-secondary hover:text-on-secondary-container transition-colors px-5 py-3 rounded-full hover:bg-secondary-container text-sm font-body font-semibold tracking-wide">
+      <span class="material-symbols-outlined text-lg">person_add</span>
+      Add another guest
+    </button>
+  `;
+  container.appendChild(row);
+}
+
+function addGuestCard() {
+  guestCount++;
+  const idx = guestCount;
+  const container = document.getElementById('guests-container');
+
+  // Remove add-button so we insert card before re-appending it
+  const addBtn = document.getElementById('add-guest-btn-row');
+  if (addBtn) addBtn.remove();
+
+  const card = document.createElement('section');
+  card.className = 'guest-card bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-surface-container-high mb-5';
+  card.id = `guest-card-${idx}`;
+
+  const serviceButtons = SERVICES.map(s => `
+    <button type="button" onclick="toggleService(this, '${idx}', '${s.id}')"
+      data-service="${s.id}"
+      class="service-btn flex flex-col items-center justify-center py-3 rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant/30 hover:bg-primary/10 hover:text-primary transition-all duration-200">
+      <span class="text-xs font-headline font-bold">${s.abbr}</span>
+      <span class="text-[9px] font-body mt-0.5 uppercase tracking-tighter leading-tight text-center">${s.label}</span>
+    </button>
+  `).join('');
+
+  if (idx === 1) {
+    // Primary guest — full form with autocomplete
+    card.innerHTML = `
+      <div class="flex justify-between items-baseline mb-5">
+        <h2 class="text-xs font-headline font-bold tracking-widest text-primary uppercase">Primary Guest</h2>
+        <span class="text-[10px] font-body text-outline uppercase tracking-tighter opacity-50">Entry 01</span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-5">
+        <div class="space-y-4">
+          <div class="ac-input-wrap">
+            <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">Phone Number</label>
+            <input id="phone-${idx}" type="tel" placeholder="(555) 000-0000" autocomplete="off"
+              oninput="acSearch(this, ${idx}, 'phone')"
+              class="w-full bg-transparent border-b border-surface-container-high py-2 text-xl font-headline font-light focus:border-primary transition-colors placeholder:text-surface-container-highest">
+            <div id="ac-phone-${idx}" class="autocomplete-list hidden"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="ac-input-wrap">
+              <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">First Name</label>
+              <input id="first-${idx}" type="text" placeholder="Name" autocomplete="off"
+                oninput="acSearch(this, ${idx}, 'first')"
+                class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+              <div id="ac-first-${idx}" class="autocomplete-list hidden"></div>
+            </div>
+            <div>
+              <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">Last Name</label>
+              <input id="last-${idx}" type="text" placeholder="Last name"
+                class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-3">Select Services</label>
+          <div class="grid grid-cols-4 gap-2" id="services-${idx}">${serviceButtons}</div>
+        </div>
+      </div>
+    `;
+  } else {
+    // Additional guest — simplified with same-contact checkbox
+    card.innerHTML = `
+      <div class="flex justify-between items-baseline mb-4">
+        <h2 class="text-xs font-headline font-bold tracking-widest text-primary uppercase">Guest ${idx}</h2>
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] font-body text-outline uppercase tracking-tighter opacity-50">Entry ${String(idx).padStart(2,'0')}</span>
+          <button onclick="removeGuest(${idx})" class="text-xs font-body text-outline hover:text-error transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined" style="font-size:14px">remove_circle</span> Remove
+          </button>
+        </div>
+      </div>
+
+      <!-- Same contact checkbox -->
+      <label class="flex items-center gap-3 mb-5 cursor-pointer group" id="same-contact-label-${idx}">
+        <div class="relative flex-shrink-0">
+          <input type="checkbox" id="same-contact-${idx}" onchange="toggleSameContact(${idx})"
+            class="sr-only peer">
+          <div class="w-5 h-5 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary hidden peer-checked-icon" style="font-size:13px;font-variation-settings:'FILL' 1,'wght' 600">check</span>
+          </div>
+        </div>
+        <span class="text-sm font-body text-on-surface-variant group-hover:text-on-surface transition-colors">Same contact info as primary guest</span>
+      </label>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-5">
+        <!-- Contact fields (hidden when same-contact checked) -->
+        <div id="manual-contact-fields-${idx}" class="space-y-3">
+      <div class="ac-input-wrap">
+        <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">Phone Number</label>
+        <input id="phone-${idx}" type="tel" placeholder="(555) 000-0000" autocomplete="off"
+          oninput="acSearch(this, ${idx}, 'phone')"
+          class="w-full bg-transparent border-b border-surface-container-high py-2 text-xl font-headline font-light focus:border-primary transition-colors placeholder:text-surface-container-highest">
+        <div id="ac-phone-${idx}" class="autocomplete-list hidden"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="ac-input-wrap">
+          <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">First Name</label>
+          <input id="first-${idx}" type="text" placeholder="Name" autocomplete="off"
+            oninput="acSearch(this, ${idx}, 'first')"
+            class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+          <div id="ac-first-${idx}" class="autocomplete-list hidden"></div>
+        </div>
+        <div>
+          <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">Last Name</label>
+          <input id="last-${idx}" type="text" placeholder="Last name"
+            class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+        </div>
+      </div>
+    </div>
+        <!-- First name only (shown when same-contact checked) -->
+        <div id="first-only-fields-${idx}" class="hidden space-y-4">
+          <div>
+            <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">First Name</label>
+            <input id="first-only-${idx}" type="text" placeholder="Name"
+              class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+          </div>
+        </div>
+        <!-- Services -->
+        <div>
+          <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-3">Select Services</label>
+          <div class="grid grid-cols-4 gap-2" id="services-${idx}">${serviceButtons}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  container.appendChild(card);
+  renderAddGuestButton();
+
+  // Scroll new card into view
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function toggleSameContact(idx) {
+  const cb = document.getElementById(`same-contact-${idx}`);
+  const contactFields = document.getElementById(`contact-fields-${idx}`);
+  const firstOnlyFields = document.getElementById(`first-only-fields-${idx}`);
+  const checkIcon = document.querySelector(`#same-contact-label-${idx} .peer-checked-icon`);
+
+  if (cb.checked) {
+    contactFields.classList.add('hidden');
+    firstOnlyFields.classList.remove('hidden');
+    if (checkIcon) checkIcon.classList.remove('hidden');
+  } else {
+    contactFields.classList.remove('hidden');
+    firstOnlyFields.classList.add('hidden');
+    if (checkIcon) checkIcon.classList.add('hidden');
+  }
+}
+
+function removeGuest(idx) {
+  const card = document.getElementById(`guest-card-${idx}`);
+  if (card) card.remove();
+}
+
+function toggleService(btn, guestIdx, serviceId) {
+  btn.classList.toggle('selected');
+}
+
+// ── Check-In Submission ──────────────────────────
+function submitCheckin() {
+  const newEntries = [];
+  for (let i = 1; i <= guestCount; i++) {
+    const card = document.getElementById(`guest-card-${i}`);
+    if (!card) continue;
+
+    const sameContact = i > 1 && document.getElementById(`same-contact-${i}`)?.checked;
+
+    let phone, first, last;
+    if (sameContact) {
+      // Only need first name; borrow phone from primary
+      first = document.getElementById(`first-only-${i}`)?.value.trim() || '';
+      phone = document.getElementById('phone-1')?.value.trim() || '';
+      last  = '';
+    } else {
+      phone = document.getElementById(`phone-${i}`)?.value.trim() || '';
+      first = document.getElementById(`first-${i}`)?.value.trim() || '';
+      last  = document.getElementById(`last-${i}`)?.value.trim() || '';
+    }
+
+    if (!first) { showToast('Please enter a first name for each guest.'); return; }
+
+    const selectedBtns = card.querySelectorAll('.service-btn.selected');
+    const services = Array.from(selectedBtns).map(b => b.dataset.service);
+
+    const entry = {
+      id: Date.now() + Math.random(),
+      name: first + (last ? ' ' + last : ''),
+      phone,
+      services,
+      status: 'waiting',
+      checkinTime: new Date(),
+      isNew: true,
+      skipSquare: sameContact,
+      isAppointment: currentCheckinType === 'appointment',
+    };
+    newEntries.push(entry);
+    queue.push(entry);
+  }
+
+  if (newEntries.length === 0) return;
+
+  // Square: upsert only guests who aren't using same contact
+  newEntries.forEach(e => { if (!e.skipSquare) squareUpsertCustomer(e); });
+
+  // Export to Google Sheets
+  newEntries.forEach(e => exportToSheets(e));
+
+  // Show confirmation
+  document.getElementById('confirm-name').textContent =
+    newEntries.map(e => e.name).join(' & ');
+  goTo('screen-confirm');
+
+  // Auto-reset to welcome after 5 seconds
+  setTimeout(() => goTo('screen-welcome'), 5000);
+
+  renderQueue();
+  updateStats();
+}
+
+// ── Queue (Front Desk) ───────────────────────────
+function renderQueue() {
+  const list = document.getElementById('queue-list');
+  const empty = document.getElementById('queue-empty');
+
+  const filtered = currentFilter === 'all' ? queue
+    : queue.filter(e => e.status === currentFilter);
+
+  // Sort: waiting first, then inservice, then done
+  const order = { waiting: 0, inservice: 1, done: 2 };
+  filtered.sort((a,b) => order[a.status] - order[b.status] || a.checkinTime - b.checkinTime);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.innerHTML = filtered.map(e => {
+    const timeStr = e.checkinTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const serviceLabels = e.services.map(sid => SERVICES.find(s=>s.id===sid)?.label || sid).join(', ') || '—';
+    const badgeClass = { waiting: 'badge-waiting', inservice: 'badge-inservice', done: 'badge-done' }[e.status];
+    const badgeLabel = { waiting: 'Waiting', inservice: 'In Service', done: 'Done' }[e.status];
+    const apptBadge = e.isAppointment
+      ? `<span class="badge-appointment text-[11px] px-2 py-0.5 rounded-full font-body font-semibold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:11px">calendar_today</span>Appt</span>`
+      : '';
+    return `
+      <div class="queue-row bg-surface-container-lowest rounded-xl p-4 border ${e.isAppointment ? 'border-primary/30' : 'border-surface-container-high'} flex items-center gap-4" data-id="${e.id}">
+        <!-- Avatar -->
+        <div class="w-10 h-10 rounded-full ${e.isAppointment ? 'bg-primary' : 'bg-primary-container'} flex items-center justify-center flex-shrink-0">
+          <span class="text-sm font-headline font-bold ${e.isAppointment ? 'text-on-primary' : 'text-primary'}">${e.name.charAt(0).toUpperCase()}</span>
+        </div>
+        <!-- Info -->
+        <div class="flex-grow min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-headline font-semibold text-on-surface text-base">${e.name}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded-full font-body font-semibold ${badgeClass}">${badgeLabel}</span>
+            ${apptBadge}
+          </div>
+          <div class="text-xs font-body text-on-surface-variant mt-0.5 truncate">${serviceLabels}</div>
+          <div class="text-[11px] font-body text-outline mt-0.5">${timeStr}${e.phone ? ' · ' + e.phone : ''}</div>
+        </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-1 flex-shrink-0">
+          ${e.status === 'waiting' ? `
+            <button onclick="updateStatus('${e.id}','inservice')" title="Start Service"
+              class="w-9 h-9 rounded-full hover:bg-primary-container flex items-center justify-center text-primary transition-colors">
+              <span class="material-symbols-outlined" style="font-size:18px">play_circle</span>
+            </button>` : ''}
+          ${e.status === 'inservice' ? `
+            <button onclick="updateStatus('${e.id}','done')" title="Mark Done"
+              class="w-9 h-9 rounded-full hover:bg-primary-container flex items-center justify-center text-primary transition-colors">
+              <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>
+            </button>` : ''}
+          ${e.status === 'done' ? `
+            <span class="material-symbols-outlined text-outline-variant" style="font-size:20px">check</span>` : ''}
+          <button onclick="removeFromQueue('${e.id}')" title="Remove"
+            class="w-9 h-9 rounded-full hover:bg-error/10 flex items-center justify-center text-outline hover:text-error transition-colors">
+            <span class="material-symbols-outlined" style="font-size:16px">close</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateStatus(id, status) {
+  const entry = queue.find(e => String(e.id) === String(id));
+  if (entry) {
+    entry.status = status;
+    renderQueue();
+    updateStats();
+  }
+}
+
+function removeFromQueue(id) {
+  queue = queue.filter(e => String(e.id) !== String(id));
+  renderQueue();
+  updateStats();
+}
+
+function filterQueue(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-primary','text-on-primary');
+    b.classList.add('bg-surface-container','text-on-surface-variant');
+  });
+  const active = document.getElementById(`tab-${filter}`);
+  if (active) {
+    active.classList.add('bg-primary','text-on-primary');
+    active.classList.remove('bg-surface-container','text-on-surface-variant');
+  }
+  renderQueue();
+}
+
+function updateStats() {
+  document.getElementById('stat-waiting').textContent = queue.filter(e=>e.status==='waiting').length;
+  document.getElementById('stat-inservice').textContent = queue.filter(e=>e.status==='inservice').length;
+  document.getElementById('stat-done').textContent = queue.filter(e=>e.status==='done').length;
+}
+
+// ── Manual Add Modal ─────────────────────────────
+let manualGuestCount = 0;
+
+function serviceButtonsHtml(prefix) {
+  return SERVICES.map(s => `
+    <button type="button" onclick="this.classList.toggle('selected')"
+      data-service="${s.id}"
+      class="service-btn flex flex-col items-center justify-center py-2 rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant/30 hover:bg-primary/10 hover:text-primary transition-all text-xs">
+      <span class="font-headline font-bold">${s.abbr}</span>
+      <span class="text-[9px] font-body mt-0.5 uppercase tracking-tighter text-center leading-tight">${s.label}</span>
+    </button>
+  `).join('');
+}
+
+function renderManualGuestCard(idx) {
+  const isPrimary = idx === 1;
+  const container = document.getElementById('manual-guests-container');
+  const card = document.createElement('div');
+  card.id = `manual-guest-${idx}`;
+  card.className = 'bg-surface-container-low rounded-xl p-4 border border-surface-container-high space-y-3';
+
+  card.innerHTML = `
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-headline font-bold tracking-widest text-primary uppercase">${isPrimary ? 'Primary Guest' : 'Guest ' + idx}</span>
+      ${!isPrimary ? `<button onclick="removeManualGuest(${idx})" class="text-xs font-body text-outline hover:text-error transition-colors flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:14px">remove_circle</span> Remove</button>` : ''}
+    </div>
+
+    ${!isPrimary ? `
+    <label class="flex items-center gap-2 cursor-pointer" id="manual-same-label-${idx}">
+      <div class="relative">
+        <input type="checkbox" id="manual-same-${idx}" onchange="toggleManualSameContact(${idx})" class="sr-only peer">
+        <div class="w-5 h-5 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary hidden" id="manual-check-icon-${idx}" style="font-size:13px;font-variation-settings:'FILL' 1,'wght' 600">check</span>
+        </div>
+      </div>
+      <span class="text-sm font-body text-on-surface-variant">Same contact info as primary guest</span>
+    </label>` : ''}
+
+    <div id="manual-contact-fields-${idx}" class="space-y-3">
+      <div class="ac-input-wrap">
+        <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">Phone Number</label>
+        <input id="manual-phone-${idx}" type="tel" placeholder="(555) 000-0000" autocomplete="off"
+          oninput="acSearchManual(this, ${idx}, 'phone')"
+          class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline font-light focus:border-primary transition-colors placeholder:text-surface-container-highest">
+        <div id="mac-phone-${idx}" class="autocomplete-list hidden"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="ac-input-wrap">
+          <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">First Name</label>
+          <input id="manual-first-${idx}" type="text" placeholder="First" autocomplete="off"
+            oninput="acSearchManual(this, ${idx}, 'first')"
+            class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+          <div id="mac-first-${idx}" class="autocomplete-list hidden"></div>
+        </div>
+        <div>
+          <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">Last Name</label>
+          <input id="manual-last-${idx}" type="text" placeholder="Last"
+            class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+        </div>
+      </div>
+    </div>
+
+    ${!isPrimary ? `
+    <div id="manual-firstonly-fields-${idx}" class="hidden">
+      <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">First Name</label>
+      <input id="manual-firstonly-${idx}" type="text" placeholder="First"
+        class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
+    </div>` : ''}
+
+    <div>
+      <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-2">Services</label>
+      <div class="grid grid-cols-4 gap-2" id="manual-services-${idx}">${serviceButtonsHtml(idx)}</div>
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+function toggleManualSameContact(idx) {
+  const cb = document.getElementById(`manual-same-${idx}`);
+  const contactFields = document.getElementById(`manual-contact-fields-${idx}`);
+  const firstOnlyFields = document.getElementById(`manual-firstonly-fields-${idx}`);
+  const checkIcon = document.getElementById(`manual-check-icon-${idx}`);
+  if (cb.checked) {
+    contactFields.classList.add('hidden');
+    firstOnlyFields.classList.remove('hidden');
+    if (checkIcon) checkIcon.classList.remove('hidden');
+  } else {
+    contactFields.classList.remove('hidden');
+    firstOnlyFields.classList.add('hidden');
+    if (checkIcon) checkIcon.classList.add('hidden');
+  }
+}
+
+function showManualAdd() {
+  manualGuestCount = 0;
+  document.getElementById('manual-guests-container').innerHTML = '';
+  addManualGuest();
+  document.getElementById('manual-modal').classList.remove('hidden');
+  document.getElementById('manual-modal').style.display = 'flex';
+}
+
+function addManualGuest() {
+  manualGuestCount++;
+  renderManualGuestCard(manualGuestCount);
+}
+
+function removeManualGuest(idx) {
+  const card = document.getElementById(`manual-guest-${idx}`);
+  if (card) card.remove();
+}
+
+function closeManualAdd() {
+  document.getElementById('manual-modal').classList.add('hidden');
+  document.getElementById('manual-modal').style.display = '';
+}
+
+function submitManualAdd() {
+  const newEntries = [];
+  const isAppointment = document.getElementById('manual-is-appointment')?.checked || false;
+  for (let i = 1; i <= manualGuestCount; i++) {
+    const card = document.getElementById(`manual-guest-${i}`);
+    if (!card) continue;
+
+    const sameContact = i > 1 && document.getElementById(`manual-same-${i}`)?.checked;
+    let phone, first, last;
+
+    if (sameContact) {
+      first = document.getElementById(`manual-firstonly-${i}`)?.value.trim() || '';
+      phone = document.getElementById('manual-phone-1')?.value.trim() || '';
+      last  = '';
+    } else {
+      phone = document.getElementById(`manual-phone-${i}`)?.value.trim() || '';
+      first = document.getElementById(`manual-first-${i}`)?.value.trim() || '';
+      last  = document.getElementById(`manual-last-${i}`)?.value.trim() || '';
+    }
+
+    if (!first) { showToast('Please enter a first name for each guest.'); return; }
+
+    const selectedBtns = card.querySelectorAll('.service-btn.selected');
+    const services = Array.from(selectedBtns).map(b => b.dataset.service);
+
+    const entry = {
+      id: Date.now() + Math.random(),
+      name: first + (last ? ' ' + last : ''),
+      phone, services,
+      status: 'waiting',
+      checkinTime: new Date(),
+      isNew: false,
+      skipSquare: sameContact,
+      isAppointment,
+    };
+    newEntries.push(entry);
+    queue.push(entry);
+  }
+
+  if (newEntries.length === 0) return;
+
+  newEntries.forEach(e => { if (!e.skipSquare) squareUpsertCustomer(e); });
+  newEntries.forEach(e => exportToSheets(e));
+
+  renderQueue();
+  updateStats();
+  closeManualAdd();
+  showToast(`${newEntries.map(e => e.name).join(' & ')} added to queue`);
+}
+
+// ── Google Sheets Export ──────────────────────────
+async function exportToSheets(entry) {
+  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+  try {
+    const row = {
+      timestamp: entry.checkinTime.toLocaleString(),
+      name: entry.name,
+      phone: entry.phone || '',
+      services: entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
+      status: entry.status,
+      type: entry.isAppointment ? 'Appointment' : 'Walk-In',
+      sheetId: SHEETS_ID,
+    };
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row),
+    });
+  } catch(e) {
+    console.warn('Sheets export failed:', e);
+  }
+}
+
+function exportAllToSheets() {
+  if (queue.length === 0) { showToast('No check-ins to export.'); return; }
+  queue.forEach(e => exportToSheets(e));
+  showToast(`Exporting ${queue.length} check-ins to Google Sheets…`);
+}
+
+// ── Square Customer Autocomplete ──────────────────
+async function loadSquareCustomers() {
+  try {
+    const res = await fetch(`${SQUARE_PROXY}/v2/customers?limit=200&sort_field=CREATED_AT&sort_order=DESC`);
+    if (!res.ok) return;
+    const data = await res.json();
+    squareCustomers = (data.customers || []).map(c => ({
+      id: c.id,
+      given_name: c.given_name || '',
+      family_name: c.family_name || '',
+      phone: c.phone_number || '',
+      display: [c.given_name, c.family_name].filter(Boolean).join(' '),
+    }));
+  } catch(e) {
+    console.warn('Could not load Square customers for autocomplete:', e);
+  }
+}
+
+function filterCustomers(query, field) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  return squareCustomers.filter(c => {
+    if (field === 'phone') return c.phone.replace(/\D/g,'').includes(q.replace(/\D/g,''));
+    if (field === 'first') return c.given_name.toLowerCase().startsWith(q) || c.display.toLowerCase().startsWith(q);
+    return false;
+  }).slice(0, 6);
+}
+
+function fillFromCustomer(customer, guestIdx, prefix, phoneId, firstId, lastId) {
+  // Fill all fields from selected Square customer
+  const phoneEl = document.getElementById(phoneId);
+  const firstEl = document.getElementById(firstId);
+  const lastEl  = document.getElementById(lastId);
+  if (phoneEl) phoneEl.value = customer.phone;
+  if (firstEl) firstEl.value = customer.given_name;
+  if (lastEl)  lastEl.value  = customer.family_name;
+  // Hide all dropdowns for this guest
+  [`ac-phone-${guestIdx}`, `ac-first-${guestIdx}`,
+   `mac-phone-${guestIdx}`, `mac-first-${guestIdx}`].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = ''; el.classList.add('hidden'); }
+  });
+}
+
+function buildDropdown(customers, dropdownId, guestIdx, phoneId, firstId, lastId) {
+  const dropdown = document.getElementById(dropdownId);
+  if (!dropdown) return;
+  if (customers.length === 0) { dropdown.classList.add('hidden'); return; }
+  dropdown.innerHTML = customers.map(c => `
+    <div class="autocomplete-item" onmousedown="fillFromCustomer(
+      {id:'${c.id}',phone:'${c.phone.replace(/'/g,"\\'")}',given_name:'${c.given_name.replace(/'/g,"\\'")}',family_name:'${c.family_name.replace(/'/g,"\\'")}'},
+      ${guestIdx}, '', '${phoneId}', '${firstId}', '${lastId}'
+    )">
+      <div class="ac-name">${c.display || '—'}</div>
+      <div class="ac-phone">${c.phone || 'No phone'}</div>
+    </div>
+  `).join('');
+  dropdown.classList.remove('hidden');
+}
+
+// Customer-facing autocomplete
+function acSearch(input, idx, field) {
+  const results = filterCustomers(input.value, field);
+  const dropId = field === 'phone' ? `ac-phone-${idx}` : `ac-first-${idx}`;
+  buildDropdown(results, dropId, idx, `phone-${idx}`, `first-${idx}`, `last-${idx}`);
+  // Hide the other dropdown
+  const otherId = field === 'phone' ? `ac-first-${idx}` : `ac-phone-${idx}`;
+  const other = document.getElementById(otherId);
+  if (other) { other.innerHTML = ''; other.classList.add('hidden'); }
+}
+
+// Front desk autocomplete
+function acSearchManual(input, idx, field) {
+  const results = filterCustomers(input.value, field);
+  const dropId = field === 'phone' ? `mac-phone-${idx}` : `mac-first-${idx}`;
+  buildDropdown(results, dropId, idx, `manual-phone-${idx}`, `manual-first-${idx}`, `manual-last-${idx}`);
+  const otherId = field === 'phone' ? `mac-first-${idx}` : `mac-phone-${idx}`;
+  const other = document.getElementById(otherId);
+  if (other) { other.innerHTML = ''; other.classList.add('hidden'); }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ac-input-wrap')) {
+    document.querySelectorAll('.autocomplete-list').forEach(d => {
+      d.innerHTML = ''; d.classList.add('hidden');
+    });
+  }
+});
+
+// ── PIN Modal ────────────────────────────────────
+function showPinModal() {
+  pinBuffer = "";
+  updatePinDots();
+  document.getElementById('pin-error').classList.add('hidden');
+  document.getElementById('pin-modal').classList.remove('hidden');
+  document.getElementById('pin-modal').style.display = 'flex';
+}
+
+function pinCancel() {
+  document.getElementById('pin-modal').classList.add('hidden');
+  document.getElementById('pin-modal').style.display = '';
+}
+
+function pinInput(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    setTimeout(() => {
+      if (pinBuffer === STAFF_PIN) {
+        pinCancel();
+        goTo('screen-desk');
+      } else {
+        document.getElementById('pin-error').classList.remove('hidden');
+        pinBuffer = "";
+        updatePinDots();
+      }
+    }, 200);
+  }
+}
+
+function pinBackspace() {
+  pinBuffer = pinBuffer.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots() {
+  document.querySelectorAll('.pin-dot').forEach((dot, i) => {
+    dot.classList.toggle('bg-primary', i < pinBuffer.length);
+    dot.classList.toggle('bg-surface-container-highest', i >= pinBuffer.length);
+  });
+}
+
+// ── Square Integration ───────────────────────────
+function showSquareModal() {
+  if (squareConfig) {
+    document.getElementById('sq-location').value = squareConfig.locationId || '';
+  }
+  document.getElementById('square-modal').classList.remove('hidden');
+  document.getElementById('square-modal').style.display = 'flex';
+}
+
+function saveSquareConfig() {
+  const locationId = document.getElementById('sq-location').value.trim();
+  if (!locationId) { showToast('Please enter your Location ID.'); return; }
+  squareConfig = { locationId };
+  localStorage.setItem('muse_sq_config', JSON.stringify(squareConfig));
+  document.getElementById('square-modal').classList.add('hidden');
+  document.getElementById('square-modal').style.display = '';
+  updateSyncLabel('ok', 'Square synced');
+  showToast('Square connection saved!');
+}
+
+async function testSquareConnection() {
+  if (!squareConfig) { showToast('Save config first.'); return; }
+  const status = document.getElementById('sq-status');
+  status.classList.remove('hidden');
+  status.textContent = 'Testing connection…';
+  try {
+    const res = await fetch(`${SQUARE_PROXY}/v2/locations`);
+    if (res.ok) {
+      status.textContent = '✓ Connected successfully!';
+      status.style.color = '#2a6868';
+      updateSyncLabel('ok', 'Square synced');
+    } else {
+      const err = await res.json();
+      status.textContent = '✗ ' + (err.errors?.[0]?.detail || 'Connection failed — check your Location ID');
+      status.style.color = '#a83836';
+      updateSyncLabel('error', 'Square error');
+    }
+  } catch(e) {
+    status.textContent = '✗ Could not reach proxy — check Worker is deployed';
+    status.style.color = '#a83836';
+  }
+}
+
+async function syncSquare() {
+  if (!squareConfig) { showSquareModal(); return; }
+  updateSyncLabel('pending', 'Syncing…');
+  showToast('Syncing with Square…');
+  try {
+    // Pull customers from Square
+    await squarePullCustomers();
+    updateSyncLabel('ok', 'Square synced');
+    showToast('Square sync complete');
+  } catch(e) {
+    updateSyncLabel('error', 'Sync failed');
+    showToast('Square sync failed. Check settings.');
+  }
+}
+
+async function squarePullCustomers() {
+  if (!squareConfig) return;
+  const res = await fetch(`${SQUARE_PROXY}/v2/customers?limit=100`);
+  if (!res.ok) throw new Error('Square API error');
+  return res.json();
+}
+
+async function squareUpsertCustomer(entry) {
+  if (!squareConfig || !entry.phone) return;
+  try {
+    // Search for existing customer by phone
+    const searchRes = await fetch(`${SQUARE_PROXY}/v2/customers/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: { filter: { phone_number: { exact: entry.phone } } }
+      })
+    });
+    const searchData = await searchRes.json();
+    const existing = searchData?.customers?.[0];
+
+    const nameParts = entry.name.split(' ');
+    const payload = {
+      given_name: nameParts[0] || '',
+      family_name: nameParts[1] || '',
+      phone_number: entry.phone,
+      note: `Last check-in: ${new Date().toLocaleDateString()} | Services: ${entry.services.join(', ')}`
+    };
+
+    if (existing) {
+      await fetch(`${SQUARE_PROXY}/v2/customers/${existing.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      await fetch(`${SQUARE_PROXY}/v2/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idempotency_key: `muse-${Date.now()}`, ...payload })
+      });
+    }
+  } catch(e) {
+    console.warn('Square upsert failed:', e);
+  }
+}
+
+function updateSyncLabel(state, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (dot) { dot.className = `sync-dot ${state}`; }
+  if (lbl) lbl.textContent = label;
+}
+
+// ── Toast ────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  toast.classList.remove('hidden');
+  toast.style.display = 'flex';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.add('hidden');
+    toast.style.display = '';
+  }, 3000);
+}
+
+// ── Square settings button in desk header ────────
+document.addEventListener('DOMContentLoaded', () => {
+  const header = document.querySelector('#screen-desk header .flex.items-center.gap-3:last-child');
+  if (header) {
+    const sqBtn = document.createElement('button');
+    sqBtn.title = 'Square Settings';
+    sqBtn.className = 'flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-container transition-colors';
+    sqBtn.innerHTML = '<span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">settings</span>';
+    sqBtn.onclick = showSquareModal;
+    header.insertBefore(sqBtn, header.firstChild);
+  }
+});
+</script>
+
+</body>
+</html>
