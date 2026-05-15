@@ -292,12 +292,26 @@ tailwind.config = {
 
   <!-- Top bar -->
   <header class="w-full px-5 py-3 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between sticky top-0 z-10">
-    <div class="flex items-center gap-3">
-      <!-- Logo with invert filter so black logo shows on light bg -->
+    <div class="flex items-center gap-4">
+      <!-- Logo -->
       <img id="logo-desk" src="" alt="Muse" class="h-10 w-auto object-contain" style="filter: none;" onerror="this.style.display='none'">
-      <div>
-        <div class="text-base font-headline font-bold text-on-surface">Dashboard</div>
-        <div class="text-[11px] font-body text-on-surface-variant tracking-wide" id="desk-date"></div>
+      <!-- Compact stats inline with logo -->
+      <div class="flex items-center gap-3 pl-2 border-l border-surface-container-high">
+        <div class="flex items-center gap-1.5">
+          <div class="w-2 h-2 rounded-full bg-secondary-container border border-secondary"></div>
+          <span class="text-sm font-headline font-bold text-on-surface" id="stat-waiting">0</span>
+          <span class="text-[10px] font-body text-on-surface-variant uppercase tracking-wider">Waiting</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-2 h-2 rounded-full bg-primary-container border border-primary"></div>
+          <span class="text-sm font-headline font-bold text-on-surface" id="stat-inservice">0</span>
+          <span class="text-[10px] font-body text-on-surface-variant uppercase tracking-wider">In Service</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-2 h-2 rounded-full bg-surface-container-high border border-outline-variant"></div>
+          <span class="text-sm font-headline font-bold text-on-surface" id="stat-done">0</span>
+          <span class="text-[10px] font-body text-on-surface-variant uppercase tracking-wider">Done</span>
+        </div>
       </div>
     </div>
     <!-- Top nav tabs -->
@@ -316,6 +330,9 @@ tailwind.config = {
       </button>
       <button class="dash-tab" id="nav-staff" onclick="showDashPanel('staff')">
         <span class="material-symbols-outlined" style="font-size:18px">people</span> Staff
+      </button>
+      <button class="dash-tab" id="nav-settings" onclick="showDashPanel('settings')">
+        <span class="material-symbols-outlined" style="font-size:18px">tune</span> Settings
       </button>
     </nav>
     <!-- Action buttons -->
@@ -344,21 +361,6 @@ tailwind.config = {
 
       <!-- ── QUEUE PANEL ── -->
       <div class="dash-panel active" id="panel-queue">
-        <!-- Stats -->
-        <div class="grid grid-cols-3 gap-3 mb-4">
-          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-            <div class="text-3xl font-headline font-extrabold text-primary" id="stat-waiting">0</div>
-            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Waiting</div>
-          </div>
-          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-            <div class="text-3xl font-headline font-extrabold text-on-surface" id="stat-inservice">0</div>
-            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">In Service</div>
-          </div>
-          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-            <div class="text-3xl font-headline font-extrabold text-on-surface" id="stat-done">0</div>
-            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Done Today</div>
-          </div>
-        </div>
         <!-- Filter tabs + Add + History date -->
         <div class="flex gap-2 mb-3 flex-wrap items-center">
           <button onclick="filterQueue('all')" id="tab-all" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-primary text-on-primary transition-all">All</button>
@@ -476,6 +478,8 @@ tailwind.config = {
       </div>
 
 
+      <!-- ── SERVICES PANEL ── -->
+      <div class="dash-panel" id="panel-services">
         <div class="flex items-center justify-between mb-5">
           <div>
             <h2 class="text-xl font-headline font-bold text-on-surface">Services</h2>
@@ -518,6 +522,32 @@ tailwind.config = {
           </button>
         </div>
         <div id="fdusers-list" class="space-y-2"></div>
+      </div>
+
+      <!-- ── SETTINGS PANEL ── -->
+      <div class="dash-panel" id="panel-settings">
+        <div class="mb-6">
+          <h2 class="text-xl font-headline font-bold text-on-surface">Settings</h2>
+          <p class="text-sm font-body text-on-surface-variant mt-0.5">Configure what customers see on the check-in screen</p>
+        </div>
+
+        <!-- Customer-facing service visibility -->
+        <div class="bg-surface-container-lowest rounded-xl p-5 border border-surface-container-high mb-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-headline font-bold text-on-surface">Check-In Services</h3>
+              <p class="text-xs font-body text-on-surface-variant mt-0.5">Choose which services appear on the customer check-in screen</p>
+            </div>
+            <button onclick="toggleAllCheckinServices()" class="text-xs font-body text-primary underline">Toggle All</button>
+          </div>
+          <div id="settings-service-visibility" class="space-y-2"></div>
+        </div>
+
+        <!-- PIN settings reminder -->
+        <div class="bg-surface-container-lowest rounded-xl p-5 border border-surface-container-high">
+          <h3 class="font-headline font-bold text-on-surface mb-1">Staff PINs</h3>
+          <p class="text-sm font-body text-on-surface-variant">Manage front desk user PINs in the <button onclick="showDashPanel('staff')" class="text-primary underline">Staff tab</button> under "Front Desk Users".</p>
+        </div>
       </div>
 
     </div>
@@ -932,6 +962,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 1500);
 
   scheduleMidnightReset();
+
+  // Enter key in group assign modal triggers advance button
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const groupModal = document.getElementById('group-assign-modal');
+    if (groupModal && !groupModal.classList.contains('hidden')) {
+      e.preventDefault();
+      saveGroupAndAdvance();
+    }
+  });
 });
 
 // ── Daily Midnight Reset ──────────────────────────
@@ -1131,7 +1171,8 @@ function addGuestCard() {
   card.className = 'guest-card bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-surface-container-high mb-5';
   card.id = `guest-card-${idx}`;
 
-  const serviceButtons = SERVICES.map(s => `
+  const visibleServices = SERVICES.filter(s => isServiceVisibleOnCheckin(s.id));
+  const serviceButtons = visibleServices.map(s => `
     <button type="button" onclick="toggleService(this, '${idx}', '${s.id}')"
       data-service="${s.id}"
       class="service-btn flex flex-col items-center justify-center py-3 rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant/30 hover:bg-primary/10 hover:text-primary transition-all duration-200">
@@ -1160,7 +1201,7 @@ function addGuestCard() {
             <div class="ac-input-wrap">
               <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">First Name</label>
               <input id="first-${idx}" type="text" placeholder="Name" autocomplete="off"
-                oninput="acSearch(this, ${idx}, 'first')"
+                oninput="acSearch(this, ${idx}, 'first'); autoCapitalize(this)"
                 class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
               <div id="ac-first-${idx}" class="autocomplete-list hidden"></div>
             </div>
@@ -1216,13 +1257,14 @@ function addGuestCard() {
         <div class="ac-input-wrap">
           <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">First Name</label>
           <input id="first-${idx}" type="text" placeholder="Name" autocomplete="off"
-            oninput="acSearch(this, ${idx}, 'first')"
+            oninput="acSearch(this, ${idx}, 'first'); autoCapitalize(this)"
             class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
           <div id="ac-first-${idx}" class="autocomplete-list hidden"></div>
         </div>
         <div>
           <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">Last Name</label>
           <input id="last-${idx}" type="text" placeholder="Last name"
+            oninput="autoCapitalize(this)"
             class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
         </div>
       </div>
@@ -1232,6 +1274,7 @@ function addGuestCard() {
           <div>
             <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">First Name</label>
             <input id="first-only-${idx}" type="text" placeholder="Name"
+              oninput="autoCapitalize(this)"
               class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
           </div>
         </div>
@@ -1392,7 +1435,33 @@ function renderQueue() {
   }
   empty.classList.add('hidden');
 
-  list.innerHTML = filtered.map(e => {
+  // Group by status with dividers when showing all
+  if (currentFilter === 'all') {
+    const groups = [
+      { key: 'waiting',   label: 'Waiting',    color: 'text-secondary' },
+      { key: 'inservice', label: 'In Service',  color: 'text-primary' },
+      { key: 'done',      label: 'Done Today',  color: 'text-outline' },
+    ];
+    list.innerHTML = groups.map(g => {
+      const entries = filtered.filter(e => e.status === g.key);
+      if (entries.length === 0) return '';
+      return `
+        <div class="mb-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-[11px] font-headline font-bold uppercase tracking-widest ${g.color}">${g.label}</span>
+            <span class="text-[11px] font-body ${g.color} opacity-60">(${entries.length})</span>
+            <div class="flex-grow h-px bg-surface-container-high ml-1"></div>
+          </div>
+          <div class="space-y-2">${entries.map(e => buildQueueRow(e)).join('')}</div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    list.innerHTML = `<div class="space-y-2">${filtered.map(e => buildQueueRow(e)).join('')}</div>`;
+  }
+}
+
+function buildQueueRow(e) {
     const timeStr = e.checkinTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     const serviceLabels = e.services.map(sid => SERVICES.find(s=>s.id===sid)?.label || sid).join(', ') || '—';
     const badgeClass = { waiting: 'badge-waiting', inservice: 'badge-inservice', done: 'badge-done' }[e.status];
@@ -1411,22 +1480,15 @@ function renderQueue() {
       return parts.join(' ');
     }).join(' · ');
     const totalDisplay = e.totalCost ? `<span class="font-semibold text-primary">$${e.totalCost.toFixed(2)}</span>` : '';
-
     const cardBg = e.status === 'done'
       ? 'bg-surface-container-high border-surface-container-highest opacity-70'
       : `bg-surface-container-lowest ${e.isAppointment ? 'border-primary/40' : 'border-surface-container-high'}`;
-
-    // Group color dot and label
     const groupDot = e.groupId
       ? `<span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${e.groupColor}" title="Party"></span>`
       : '';
     const groupLabel = e.groupLabel
       ? `<span class="text-[10px] font-body italic" style="color:${e.groupColor}">${e.groupLabel}</span>`
       : '';
-
-    // Check if entry has group mates in queue for merge button context
-    const hasGroupMates = e.groupId && queue.filter(x => x.groupId === e.groupId && String(x.id) !== String(e.id)).length > 0;
-
     return `
       <div class="queue-row ${cardBg} rounded-xl p-4 border flex items-center gap-4" data-id="${e.id}">
         <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-headline font-bold"
@@ -1482,7 +1544,6 @@ function renderQueue() {
         </div>
       </div>
     `;
-  }).join('');
 }
 
 function updateStatus(id, status) {
@@ -1524,7 +1585,7 @@ function updateStats() {
 
 // ── Dashboard Panel Switching ─────────────────────
 function showDashPanel(panel) {
-  ['queue','reports','transactions','services','staff'].forEach(p => {
+  ['queue','reports','transactions','services','staff','settings'].forEach(p => {
     document.getElementById(`panel-${p}`)?.classList.remove('active');
     document.getElementById(`nav-${p}`)?.classList.remove('active');
   });
@@ -1534,6 +1595,7 @@ function showDashPanel(panel) {
   if (panel === 'staff')         { renderStaffList(); renderFdUsersList(); }
   if (panel === 'reports')       { setReportRange('today'); }
   if (panel === 'transactions')  renderTransactions();
+  if (panel === 'settings')      renderSettingsPanel();
 }
 
 // ── Services CRUD ────────────────────────────────
@@ -1920,20 +1982,26 @@ function exportAllToSheets() {
 
 // ── Auto-update existing Sheets row ──────────────
 async function updateSheetsRow(entry) {
-  const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
   try {
     const assignDetail = (entry.assignments || []).map(a => {
       const tech = STAFF.find(s => s.id === a.techId);
       const svc  = SERVICES.find(s => s.id === a.serviceId);
       const parts = [];
-      if (svc)  parts.push(svc.label);
-      if (tech) parts.push(tech.name);
+      if (svc)       parts.push(svc.label);
+      if (tech)      parts.push(tech.name);
       if (a.station) parts.push(a.station);
-      if (a.cost) parts.push(`$${a.cost.toFixed(2)}`);
-      return parts.join(' ');
-    }).join(' | ');
+      if (a.cost)    parts.push(`$${Number(a.cost).toFixed(2)}`);
+      return parts.filter(Boolean).join(' ');
+    }).filter(Boolean).join(' | ');
 
-    const row = {
+    const staffDetail = (entry.assignments || []).map(a => {
+      const tech = STAFF.find(s => s.id === a.techId);
+      const svc  = SERVICES.find(s => s.id === a.serviceId);
+      if (!tech) return null;
+      return `${svc?.label || ''}: ${tech.name}${a.cost ? ' $' + Number(a.cost).toFixed(2) : ''}`;
+    }).filter(Boolean).join(', ');
+
+    const payload = {
       action: 'update',
       entryId: String(entry.id),
       timestamp: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toLocaleString(),
@@ -1942,17 +2010,27 @@ async function updateSheetsRow(entry) {
       services: entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
       type: entry.isAppointment ? 'Appointment' : 'Walk-In',
       status: entry.status,
-      staff: (entry.assignments || []).map(a => STAFF.find(s => s.id === a.techId)?.name).filter(Boolean).join(', '),
+      staff: staffDetail,
       stations: (entry.assignments || []).map(a => a.station).filter(Boolean).join(', '),
       detail: assignDetail,
-      total: entry.totalCost ? `$${entry.totalCost.toFixed(2)}` : '',
+      total: entry.totalCost ? `$${Number(entry.totalCost).toFixed(2)}` : '',
       loggedBy: activeUser ? activeUser.name : '',
       sheetId: SHEETS_ID,
     };
-    await fetch(SHEETS_URL, {
-      method: 'POST', mode: 'no-cors',
+
+    // Route through our Cloudflare proxy to avoid CORS issues
+    await fetch(`${SQUARE_PROXY.replace('/square', '')}/sheets`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(row),
+      body: JSON.stringify(payload),
+    }).catch(() => {
+      // Fallback: direct fetch with no-cors if proxy path fails
+      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxD3oKLXCshA9GUN3ZNT4qxeMSn5Oru3Q7kMDeikJQ6BteFsMc5GofKAD1tefHg7SCG/exec`;
+      return fetch(SHEETS_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
     });
   } catch(e) { console.warn('Sheets update failed:', e); }
 }
@@ -2474,6 +2552,69 @@ function buildDropdown(customers, dropdownId, guestIdx, phoneId, firstId, lastId
     </div>
   `}).join('');
   dropdown.classList.remove('hidden');
+}
+
+// ── Auto Capitalize ───────────────────────────────
+function autoCapitalize(input) {
+  const val = input.value;
+  if (!val) return;
+  input.value = val.replace(/(?:^|\s|-)\S/g, c => c.toUpperCase());
+}
+
+// ── Settings Panel ────────────────────────────────
+// Persist which services are shown on customer-facing check-in
+let hiddenCheckinServices = JSON.parse(localStorage.getItem('muse_hidden_services') || '[]');
+
+function isServiceVisibleOnCheckin(id) {
+  return !hiddenCheckinServices.includes(id);
+}
+
+function saveHiddenServices() {
+  localStorage.setItem('muse_hidden_services', JSON.stringify(hiddenCheckinServices));
+}
+
+function renderSettingsPanel() {
+  const container = document.getElementById('settings-service-visibility');
+  if (!container) return;
+  container.innerHTML = SERVICES.map(s => {
+    const visible = isServiceVisibleOnCheckin(s.id);
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-surface-container-high last:border-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span class="text-xs font-headline font-bold text-on-primary">${s.abbr}</span>
+          </div>
+          <span class="font-body font-semibold text-on-surface">${s.label}</span>
+        </div>
+        <button onclick="toggleCheckinService('${s.id}')" id="vis-btn-${s.id}"
+          class="relative w-12 h-6 rounded-full transition-colors ${visible ? 'bg-primary' : 'bg-surface-container-high'}">
+          <div class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${visible ? 'left-6' : 'left-0.5'}"></div>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleCheckinService(id) {
+  if (hiddenCheckinServices.includes(id)) {
+    hiddenCheckinServices = hiddenCheckinServices.filter(x => x !== id);
+  } else {
+    hiddenCheckinServices.push(id);
+  }
+  saveHiddenServices();
+  renderSettingsPanel();
+}
+
+function toggleAllCheckinServices() {
+  if (hiddenCheckinServices.length === 0) {
+    // Hide all
+    hiddenCheckinServices = SERVICES.map(s => s.id);
+  } else {
+    // Show all
+    hiddenCheckinServices = [];
+  }
+  saveHiddenServices();
+  renderSettingsPanel();
 }
 
 // ── Phone Formatting ─────────────────────────────
