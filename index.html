@@ -101,6 +101,12 @@ tailwind.config = {
   /* Report range buttons */
   .rng-btn.active { background:#1a5252 !important; color:#ffffff !important; }
 
+  /* Turns drag-drop */
+  .turns-draggable { cursor: grab; }
+  .turns-draggable:active { cursor: grabbing; }
+  .turns-drop-target { border: 2px dashed #1a5252 !important; background: #e0f0f0 !important; }
+  .turns-drag-over { opacity: 0.5; }
+
   /* Queue action buttons — large touch targets */
   .q-action-btn { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; border:none; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
   .q-action-btn:active { transform:scale(0.92); }
@@ -316,6 +322,9 @@ tailwind.config = {
     </div>
     <!-- Top nav tabs -->
     <nav class="flex items-center gap-1">
+      <button class="dash-tab" id="nav-turns" onclick="showDashPanel('turns')">
+        <span class="material-symbols-outlined" style="font-size:18px">swap_vert</span> Turns
+      </button>
       <button class="dash-tab active" id="nav-queue" onclick="showDashPanel('queue')">
         <span class="material-symbols-outlined" style="font-size:18px">queue</span> Queue
       </button>
@@ -367,10 +376,16 @@ tailwind.config = {
           <button onclick="filterQueue('waiting')" id="tab-waiting" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">Waiting</button>
           <button onclick="filterQueue('inservice')" id="tab-inservice" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">In Service</button>
           <button onclick="filterQueue('done')" id="tab-done" class="tab-btn px-4 py-2 rounded-full text-sm font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">Done</button>
+          <!-- Done toggle -->
+          <button onclick="toggleDoneVisibility()" id="done-toggle-btn"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-body font-semibold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all border border-outline-variant/40">
+            <span class="material-symbols-outlined" style="font-size:15px" id="done-toggle-icon">visibility_off</span>
+            <span id="done-toggle-label">Hide Done</span>
+          </button>
           <!-- History date picker -->
           <div class="flex items-center gap-2 ml-2">
             <input type="date" id="queue-history-date" class="bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="loadQueueHistory(this.value)">
-            <button onclick="clearQueueHistory()" id="clear-history-btn" class="hidden text-xs font-body text-primary underline" >Today</button>
+            <button onclick="clearQueueHistory()" id="clear-history-btn" class="hidden text-xs font-body text-primary underline">Today</button>
           </div>
           <button onclick="showManualAdd()" class="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-body font-semibold bg-primary text-on-primary hover:bg-primary-dim transition-all shadow-sm">
             <span class="material-symbols-outlined" style="font-size:18px">person_add</span> Add Guest
@@ -499,54 +514,161 @@ tailwind.config = {
 
       <!-- ── STAFF PANEL ── -->
       <div class="dash-panel" id="panel-staff">
-        <!-- Technicians -->
+        <!-- Technicians header -->
         <div class="flex items-center justify-between mb-5">
           <div>
             <h2 class="text-xl font-headline font-bold text-on-surface">Technicians</h2>
             <p class="text-sm font-body text-on-surface-variant mt-0.5">Staff who perform services</p>
           </div>
-          <button onclick="showAddStaff()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
-            <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
-          </button>
-        </div>
-        <div id="staff-list" class="space-y-2 mb-8"></div>
-
-        <!-- Front Desk Users -->
-        <div class="flex items-center justify-between mb-5 pt-4 border-t border-surface-container-high">
-          <div>
-            <h2 class="text-xl font-headline font-bold text-on-surface">Front Desk Users</h2>
-            <p class="text-sm font-body text-on-surface-variant mt-0.5">Staff who access the dashboard</p>
+          <div class="flex gap-2">
+            <button onclick="toggleStaffScheduleView()" id="schedule-view-btn" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary font-body font-semibold text-sm hover:bg-primary hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">calendar_month</span> Schedule
+            </button>
+            <button onclick="squarePullStaff()" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-outline-variant/60 text-on-surface font-body font-semibold text-sm hover:bg-surface-container transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">sync</span> Sync Square
+            </button>
+            <button onclick="showAddStaff()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
+            </button>
           </div>
-          <button onclick="showAddFdUser()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
-            <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
-          </button>
         </div>
-        <div id="fdusers-list" class="space-y-2"></div>
+
+        <!-- Technician list (shown by default) -->
+        <div id="staff-list-view">
+          <div id="staff-list" class="space-y-2 mb-8"></div>
+          <!-- Front Desk Users -->
+          <div class="flex items-center justify-between mb-5 pt-4 border-t border-surface-container-high">
+            <div>
+              <h2 class="text-xl font-headline font-bold text-on-surface">Front Desk Users</h2>
+              <p class="text-sm font-body text-on-surface-variant mt-0.5">Staff who access the dashboard</p>
+            </div>
+            <button onclick="showAddFdUser()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
+            </button>
+          </div>
+          <div id="fdusers-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Schedule view (hidden by default) -->
+        <div id="staff-schedule-view" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <button onclick="scheduleWeekOffset(-1)" class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+                <span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>
+              </button>
+              <span id="schedule-week-label" class="text-sm font-body font-semibold text-on-surface min-w-40 text-center"></span>
+              <button onclick="scheduleWeekOffset(1)" class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+                <span class="material-symbols-outlined" style="font-size:20px">chevron_right</span>
+              </button>
+              <button onclick="scheduleWeekOffset(0, true)" class="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-surface-container text-on-surface hover:bg-surface-container-high transition-all">Today</button>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+              <div class="flex items-center gap-1.5 text-xs font-body text-on-surface-variant"><div class="w-3 h-3 rounded-full bg-primary"></div>Working</div>
+              <div class="flex items-center gap-1.5 text-xs font-body text-on-surface-variant"><div class="w-3 h-3 rounded-full" style="background:#f5c870"></div>Off</div>
+              <div class="flex items-center gap-1.5 text-xs font-body text-on-surface-variant"><div class="w-3 h-3 rounded-full" style="background:#fa746f"></div>Sick</div>
+              <div class="flex items-center gap-1.5 text-xs font-body text-on-surface-variant"><div class="w-3 h-3 rounded-full" style="background:#adb3b5"></div>Vacation</div>
+            </div>
+          </div>
+          <div class="overflow-x-auto no-scroll">
+            <div id="schedule-grid" class="min-w-max"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TURNS PANEL ── -->
+      <div class="dash-panel" id="panel-turns">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div>
+              <h2 class="text-xl font-headline font-bold text-on-surface">Technician Turns</h2>
+              <p class="text-sm font-body text-on-surface-variant mt-0.5" id="turns-date-label">Today</p>
+            </div>
+            <!-- Date select for history -->
+            <input type="date" id="turns-history-date" class="bg-surface-container border border-surface-container-high rounded-lg px-3 py-1.5 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="loadTurnsHistory(this.value)">
+            <button onclick="clearTurnsHistory()" id="turns-today-btn" class="hidden text-xs font-body text-primary underline">Today</button>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant">
+              <div class="w-2 h-2 rounded-full bg-primary"></div>
+              <span>Active: <strong id="turns-active-count">0</strong></span>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant">
+              <div class="w-2 h-2 rounded-full" style="background:#f5c870"></div>
+              <span>Break: <strong id="turns-break-count">0</strong></span>
+            </div>
+            <!-- Add/Remove technicians button -->
+            <button onclick="showTurnsTechSelector()" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary font-body font-semibold text-sm hover:bg-primary hover:text-on-primary transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">people</span> Technicians
+            </button>
+            <button onclick="showManualAdd()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-all">
+              <span class="material-symbols-outlined" style="font-size:16px">person_add</span> New Entry
+            </button>
+          </div>
+        </div>
+
+        <!-- Two column layout — left scrolls, right sticks -->
+        <div class="flex gap-4" style="align-items:flex-start;min-height:400px">
+          <!-- Left: grid scrolls inside itself -->
+          <div class="flex-grow overflow-y-auto overflow-x-hidden" style="scrollbar-width:thin;max-height:calc(100vh - 210px)" id="turns-tech-grid"></div>
+          <!-- Right: sticky, always visible -->
+          <div class="w-72 flex-shrink-0 flex flex-col gap-3" style="position:sticky;top:0;max-height:calc(100vh - 210px)">
+            <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden flex flex-col" style="max-height:48%;border-left:3px solid #d4860a">
+              <div class="px-4 py-2 border-b border-surface-container-high flex items-center justify-between flex-shrink-0" style="background:rgba(255,224,178,0.3)">
+                <span class="text-xs font-headline font-bold uppercase tracking-widest" style="color:#a05000">Waiting</span>
+                <span class="text-xs font-body text-on-surface-variant" id="turns-waiting-label">0 in queue</span>
+              </div>
+              <div id="turns-waiting-list" class="divide-y divide-surface-container-high overflow-y-auto" style="scrollbar-width:auto;flex:1"></div>
+            </div>
+            <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden flex flex-col" style="max-height:48%;border-left:3px solid #2a7a4f">
+              <div class="px-4 py-2 border-b border-surface-container-high flex items-center justify-between flex-shrink-0" style="background:rgba(200,230,197,0.3)">
+                <span class="text-xs font-headline font-bold uppercase tracking-widest" style="color:#1b5e20">Active</span>
+                <span class="text-xs font-body text-on-surface-variant" id="turns-active-label">0 in service</span>
+              </div>
+              <div id="turns-active-list" class="divide-y divide-surface-container-high overflow-y-auto" style="scrollbar-width:auto;flex:1"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── SETTINGS PANEL ── -->
       <div class="dash-panel" id="panel-settings">
-        <div class="mb-6">
+        <div class="mb-5">
           <h2 class="text-xl font-headline font-bold text-on-surface">Settings</h2>
-          <p class="text-sm font-body text-on-surface-variant mt-0.5">Configure what customers see on the check-in screen</p>
+          <p class="text-sm font-body text-on-surface-variant mt-0.5">Configure app behavior and customer-facing options</p>
         </div>
 
-        <!-- Customer-facing service visibility -->
-        <div class="bg-surface-container-lowest rounded-xl p-5 border border-surface-container-high mb-5">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="font-headline font-bold text-on-surface">Check-In Services</h3>
-              <p class="text-xs font-body text-on-surface-variant mt-0.5">Choose which services appear on the customer check-in screen</p>
+        <!-- Collapsible: Check-In Services -->
+        <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high mb-3 overflow-hidden">
+          <button onclick="toggleSettingsSection('svc-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
+            <div class="text-left">
+              <div class="font-headline font-bold text-on-surface">Check-In Services</div>
+              <div class="text-xs font-body text-on-surface-variant mt-0.5">Choose which services appear on the customer check-in screen</div>
             </div>
-            <button onclick="toggleAllCheckinServices()" class="text-xs font-body text-primary underline">Toggle All</button>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform" id="svc-section-icon">expand_more</span>
+          </button>
+          <div id="svc-section" class="hidden px-5 pb-4 border-t border-surface-container-high">
+            <div class="flex justify-end pt-3 mb-2">
+              <button onclick="toggleAllCheckinServices()" class="text-xs font-body text-primary underline">Toggle All</button>
+            </div>
+            <div id="settings-service-visibility" class="space-y-2"></div>
           </div>
-          <div id="settings-service-visibility" class="space-y-2"></div>
         </div>
 
-        <!-- PIN settings reminder -->
-        <div class="bg-surface-container-lowest rounded-xl p-5 border border-surface-container-high">
-          <h3 class="font-headline font-bold text-on-surface mb-1">Staff PINs</h3>
-          <p class="text-sm font-body text-on-surface-variant">Manage front desk user PINs in the <button onclick="showDashPanel('staff')" class="text-primary underline">Staff tab</button> under "Front Desk Users".</p>
+        <!-- Collapsible: Active Staff -->
+        <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high mb-3 overflow-hidden">
+          <button onclick="toggleSettingsSection('active-staff-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
+            <div class="text-left">
+              <div class="font-headline font-bold text-on-surface">Active Staff</div>
+              <div class="text-xs font-body text-on-surface-variant mt-0.5">Only active staff appear in Assign & Price menus</div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform" id="active-staff-section-icon">expand_more</span>
+          </button>
+          <div id="active-staff-section" class="hidden px-5 pb-4 border-t border-surface-container-high">
+            <div class="flex justify-end pt-3 mb-2">
+              <button onclick="toggleAllActiveStaff()" class="text-xs font-body text-primary underline">Toggle All</button>
+            </div>
+            <div id="settings-active-staff" class="space-y-2"></div>
+          </div>
         </div>
       </div>
 
@@ -558,7 +680,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      PIN MODAL
 ═══════════════════════════════════════════════ -->
-<div id="pin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="pin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-8 w-80 shadow-2xl fade-up">
     <h2 class="text-xl font-headline font-bold text-on-surface text-center mb-1">Staff Access</h2>
     <p class="text-xs font-body text-on-surface-variant text-center mb-1" id="pin-subtitle">Enter your PIN</p>
@@ -602,7 +724,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      MANUAL ADD MODAL (Front Desk)
 ═══════════════════════════════════════════════ -->
-<div id="manual-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
+<div id="manual-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30">
   <div class="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-lg shadow-2xl fade-up mx-4 max-h-[90vh] overflow-y-auto no-scroll">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xl font-headline font-bold text-on-surface">Add Guest</h2>
@@ -647,7 +769,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      SERVICE EDIT MODAL
 ═══════════════════════════════════════════════ -->
-<div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-5">
       <h2 id="service-modal-title" class="text-xl font-headline font-bold text-on-surface">Add Service</h2>
@@ -664,6 +786,15 @@ tailwind.config = {
         <input id="service-abbr-input" type="text" maxlength="4" placeholder="e.g. GM"
           class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
       </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Base Cost (suggested price)</label>
+        <div class="relative">
+          <span class="absolute left-0 bottom-2 text-outline-variant font-body">$</span>
+          <input id="service-base-cost-input" type="number" min="0" step="0.01" placeholder="0.00"
+            class="w-full border-b-2 border-surface-container-high bg-transparent py-2 pl-4 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+        </div>
+        <p class="text-[11px] font-body text-on-surface-variant mt-1">Shown as a greyed-out suggestion in Assign & Price. Staff must still enter a price manually.</p>
+      </div>
     </div>
     <input type="hidden" id="service-edit-id">
     <button onclick="saveService()" class="w-full mt-6 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
@@ -675,7 +806,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      STAFF EDIT MODAL
 ═══════════════════════════════════════════════ -->
-<div id="staff-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="staff-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-5">
       <h2 id="staff-modal-title" class="text-xl font-headline font-bold text-on-surface">Add Staff</h2>
@@ -693,6 +824,11 @@ tailwind.config = {
           class="w-full border-b-2 border-surface-container-high bg-transparent py-2 text-lg font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
         <p class="text-[11px] font-body text-on-surface-variant mt-1">Leave blank for no commission tracking</p>
       </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-2">Services this tech performs</label>
+        <div class="grid grid-cols-4 gap-2" id="staff-services-picker"></div>
+        <p class="text-[11px] font-body text-on-surface-variant mt-1">Leave all unselected to allow all services</p>
+      </div>
     </div>
     <input type="hidden" id="staff-edit-id">
     <button onclick="saveStaff()" class="w-full mt-6 bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold tracking-tight transition-all active:scale-95">
@@ -705,7 +841,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      FRONT DESK USER MODAL
 ═══════════════════════════════════════════════ -->
-<div id="fduser-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="fduser-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-5">
       <h2 id="fduser-modal-title" class="text-xl font-headline font-bold text-on-surface">Add Front Desk User</h2>
@@ -741,7 +877,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      EDIT SERVICES MODAL
 ═══════════════════════════════════════════════ -->
-<div id="edit-services-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="edit-services-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-md shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-xl font-headline font-bold text-on-surface">Edit Services</h2>
@@ -758,7 +894,7 @@ tailwind.config = {
 </div>
 
 
-<div id="assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-md shadow-2xl fade-up mx-4 max-h-[90vh] overflow-y-auto no-scroll">
     <div class="flex items-center justify-between mb-1">
       <h2 class="text-xl font-headline font-bold text-on-surface">Assign & Price</h2>
@@ -794,7 +930,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      GROUP ASSIGN MODAL (multi-guest tabs)
 ═══════════════════════════════════════════════ -->
-<div id="group-assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="group-assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl w-full max-w-2xl shadow-2xl fade-up mx-4 max-h-[92vh] flex flex-col">
     <div class="flex items-center justify-between p-6 border-b border-surface-container-high flex-shrink-0">
       <h2 class="text-xl font-headline font-bold text-on-surface">Assign & Price</h2>
@@ -828,7 +964,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      SPLIT / MERGE MODAL
 ═══════════════════════════════════════════════ -->
-<div id="split-merge-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<div id="split-merge-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-6 w-full max-w-md shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-xl font-headline font-bold text-on-surface" id="split-merge-title">Split / Merge</h2>
@@ -839,7 +975,7 @@ tailwind.config = {
 </div>
 
 
-<div id="warn-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-on-surface/50 backdrop-blur-sm">
+<div id="warn-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-on-surface/50">
   <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4 text-center">
     <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mx-auto mb-4">
       <span class="material-symbols-outlined text-secondary" style="font-size:28px;font-variation-settings:'FILL' 1">warning</span>
@@ -853,7 +989,7 @@ tailwind.config = {
   </div>
 </div>
 
-<div id="square-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30 backdrop-blur-sm">
+<div id="square-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/30">
   <div class="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl fade-up mx-4">
     <div class="flex items-center justify-between mb-2">
       <h2 class="text-xl font-headline font-bold text-on-surface">Square Integration</h2>
@@ -881,6 +1017,123 @@ tailwind.config = {
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════
+     TECH STATUS MENU (click on tech photo)
+═══════════════════════════════════════════════ -->
+<div id="tech-status-menu" class="fixed z-[60] hidden bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container-high p-4 w-72" style="min-width:240px">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="font-headline font-bold text-on-surface" id="tech-status-menu-name">Tech Name</h3>
+    <button onclick="closeTechStatusMenu()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined" style="font-size:18px">close</span></button>
+  </div>
+  <div class="flex gap-2 mb-3">
+    <button onclick="setTechBreak(false)" id="tsm-available" class="flex-1 py-2 rounded-xl text-xs font-body font-semibold transition-all" style="background:#2a7a4f;color:#fff">Available</button>
+    <button onclick="setTechBreak(true)" id="tsm-break" class="flex-1 py-2 rounded-xl text-xs font-body font-semibold transition-all" style="background:#f5c870;color:#3a2800">On Break</button>
+  </div>
+  <div class="border-t border-surface-container-high pt-2">
+    <div class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest mb-1">Services Today</div>
+    <div id="tech-status-menu-services" class="text-xs font-body text-on-surface-variant space-y-0.5"></div>
+  </div>
+</div>
+
+
+<div id="turns-tech-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
+  <div class="bg-surface-container-lowest rounded-2xl p-6 w-full max-w-md shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Today's Technicians</h2>
+      <button onclick="closeTurnsTechModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="text-xs font-body text-on-surface-variant mb-3">Check to add to today's rotation. Drag <span class="material-symbols-outlined align-middle" style="font-size:14px">drag_indicator</span> to reorder.</p>
+    <div class="flex gap-2 mb-3">
+      <button onclick="checkAllTechs()" class="text-xs font-body text-primary underline">Check All</button>
+      <span class="text-xs text-outline">·</span>
+      <button onclick="uncheckAllTechs()" class="text-xs font-body text-outline hover:text-error underline">Uncheck All</button>
+    </div>
+    <div id="turns-tech-selector-list" class="space-y-2 max-h-96 overflow-y-auto no-scroll mb-4"></div>
+    <button onclick="saveTurnsTechOrder()" class="w-full bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold transition-all active:scale-95">Save Order</button>
+  </div>
+</div>
+
+
+<div id="turns-assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
+  <div class="bg-surface-container-lowest rounded-2xl p-6 w-full max-w-sm shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-headline font-bold text-on-surface" id="turns-assign-label">Assign to Slot</h2>
+      <button onclick="closeTurnsAssignModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined" style="font-size:20px">close</span></button>
+    </div>
+    <div id="turns-assign-list" class="space-y-2 max-h-80 overflow-y-auto no-scroll"></div>
+  </div>
+</div>
+
+
+<div id="staff-photo-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
+  <div class="bg-surface-container-lowest rounded-2xl p-7 w-full max-w-sm shadow-2xl fade-up mx-4 text-center">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-headline font-bold text-on-surface">Staff Photo</h2>
+      <button onclick="closeStaffPhotoModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="staff-photo-preview" class="w-24 h-24 rounded-full bg-surface-container-high flex items-center justify-center mx-auto mb-4 overflow-hidden border-2 border-surface-container-highest">
+      <span class="text-3xl font-headline font-bold text-on-surface-variant" id="staff-photo-initial">?</span>
+    </div>
+    <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-body font-semibold text-sm transition-colors mb-3">
+      <span class="material-symbols-outlined" style="font-size:16px">upload</span> Upload Photo
+      <input type="file" id="staff-photo-input" accept="image/*" class="hidden" onchange="handleStaffPhotoUpload(this)">
+    </label>
+    <p class="text-xs font-body text-on-surface-variant mb-5">Square or round photo works best.</p>
+    <input type="hidden" id="staff-photo-target-id">
+    <div class="flex gap-2">
+      <button onclick="clearStaffPhoto()" class="flex-1 border border-outline-variant/60 text-on-surface-variant py-3 rounded-xl font-headline font-semibold transition-all">Clear</button>
+      <button onclick="saveStaffPhoto()" class="flex-1 bg-primary hover:bg-primary-dim text-on-primary py-3 rounded-xl font-headline font-bold transition-all active:scale-95">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCHEDULE STATUS PICKER
+═══════════════════════════════════════════════ -->
+<div id="schedule-picker" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
+  <div class="bg-surface-container-lowest rounded-2xl p-6 w-72 shadow-2xl fade-up mx-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-headline font-bold text-on-surface" id="schedule-picker-label">Set Status</h2>
+      <button onclick="closeSchedulePicker()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined" style="font-size:20px">close</span></button>
+    </div>
+    <div class="space-y-1">
+      <button onclick="setScheduleStatus('working')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container transition-colors text-left">
+        <div class="w-4 h-4 rounded-full bg-primary flex-shrink-0"></div>
+        <span class="font-body font-semibold text-on-surface">Working</span>
+      </button>
+      <button onclick="setScheduleStatus('off')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container transition-colors text-left">
+        <div class="w-4 h-4 rounded-full flex-shrink-0" style="background:#f5c870"></div>
+        <span class="font-body font-semibold text-on-surface">Off</span>
+      </button>
+      <button onclick="setScheduleStatus('sick')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container transition-colors text-left">
+        <div class="w-4 h-4 rounded-full flex-shrink-0" style="background:#fa746f"></div>
+        <span class="font-body font-semibold text-on-surface">Sick</span>
+      </button>
+      <button onclick="setScheduleStatus('vacation')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container transition-colors text-left">
+        <div class="w-4 h-4 rounded-full flex-shrink-0" style="background:#adb3b5"></div>
+        <span class="font-body font-semibold text-on-surface">Vacation</span>
+      </button>
+      <button onclick="setScheduleStatus(null)" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container transition-colors text-left">
+        <div class="w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant/50 flex-shrink-0"></div>
+        <span class="font-body font-semibold text-on-surface-variant">Clear</span>
+      </button>
+      <!-- Repeat toggle -->
+      <div class="border-t border-surface-container-high pt-2 mt-1">
+        <label class="flex items-center gap-3 p-3 cursor-pointer" onclick="toggleRepeatSchedule()">
+          <div id="repeat-toggle-box" class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center flex-shrink-0 transition-all" style="background:transparent">
+            <span class="material-symbols-outlined hidden" id="repeat-toggle-check" style="font-size:14px;color:#ffffff;font-variation-settings:'FILL' 1,'wght' 700">check</span>
+          </div>
+          <input type="checkbox" id="repeat-toggle-cb" class="hidden">
+          <div>
+            <div class="font-body font-semibold text-on-surface text-sm">Repeat weekly</div>
+            <div class="text-[11px] font-body text-on-surface-variant">Apply this status every week on this day until turned off</div>
+          </div>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════
      TOAST
@@ -963,13 +1216,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
   scheduleMidnightReset();
 
-  // Enter key in group assign modal triggers advance button
+  // Ctrl+Z / Cmd+Z undo
   document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    const groupModal = document.getElementById('group-assign-modal');
-    if (groupModal && !groupModal.classList.contains('hidden')) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
       e.preventDefault();
-      saveGroupAndAdvance();
+      performUndo();
+    }
+    // Enter in group assign modal triggers advance
+    if (e.key === 'Enter') {
+      const groupModal = document.getElementById('group-assign-modal');
+      if (groupModal && !groupModal.classList.contains('hidden')) {
+        e.preventDefault();
+        saveGroupAndAdvance();
+      }
+    }
+    // Esc closes any open modal without saving
+    if (e.key === 'Escape') {
+      const allModals = [
+        ['tech-status-menu',    closeTechStatusMenu],
+        ['group-assign-modal',  closeGroupAssignModal],
+        ['assign-modal',        closeAssignModal],
+        ['manual-modal',        closeManualAdd],
+        ['warn-modal',          closeWarnModal],
+        ['turns-assign-modal',  closeTurnsAssignModal],
+        ['turns-tech-modal',    closeTurnsTechModal],
+        ['split-merge-modal',   closeSplitMergeModal],
+        ['edit-services-modal', closeEditServicesModal],
+        ['service-modal',       closeServiceModal],
+        ['staff-modal',         closeStaffModal],
+        ['staff-photo-modal',   closeStaffPhotoModal],
+        ['schedule-picker',     closeSchedulePicker],
+        ['square-modal',        () => { document.getElementById('square-modal').classList.add('hidden'); document.getElementById('square-modal').style.display=''; }],
+      ];
+      for (const [id, fn] of allModals) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) { fn(); return; }
+      }
+    }
+    // Enter in manual add modal submits the form
+    if (e.key === 'Enter') {
+      const manualModal = document.getElementById('manual-modal');
+      if (manualModal && !manualModal.classList.contains('hidden')) {
+        // Don't fire if focused on a select or multi-line input
+        const tag = document.activeElement?.tagName;
+        if (tag !== 'SELECT' && tag !== 'TEXTAREA') {
+          e.preventDefault(); submitManualAdd(); return;
+        }
+      }
     }
   });
 });
@@ -981,11 +1275,15 @@ function scheduleMidnightReset() {
   const msUntilMidnight = midnight - now;
   setTimeout(() => {
     archiveTodayQueue();
+    archiveTurnsForToday();
+    turnsBreakStaff = [];
+    saveTurnsBreak();
     queue = [];
     renderQueue();
     updateStats();
-    showToast('Queue reset for new day');
-    scheduleMidnightReset(); // reschedule for next midnight
+    renderTurns();
+    showToast('Queue and turns reset for new day');
+    scheduleMidnightReset();
   }, msUntilMidnight);
 }
 
@@ -1208,6 +1506,7 @@ function addGuestCard() {
             <div>
               <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest px-1 block mb-1">Last Name</label>
               <input id="last-${idx}" type="text" placeholder="Last name"
+                oninput="autoCapitalize(this)"
                 class="w-full bg-transparent border-b border-surface-container-high py-2 text-lg font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
             </div>
           </div>
@@ -1301,24 +1600,29 @@ function toggleSameContact(idx) {
   const contactFields = document.getElementById(`manual-contact-fields-${idx}`);
   const firstOnlyFields = document.getElementById(`first-only-fields-${idx}`);
 
-  // Toggle checkbox state
   cb.checked = !cb.checked;
 
   if (cb.checked) {
-    // Checked state
+    // Retain any first name already typed in the contact fields
+    const existingFirst = document.getElementById(`first-${idx}`)?.value.trim() || '';
     box.style.background = '#1a5252';
     box.style.borderColor = '#1a5252';
     checkIcon.classList.remove('hidden');
     contactFields.classList.add('hidden');
     firstOnlyFields.classList.remove('hidden');
+    // Pre-fill the first-only field with the existing first name
+    const firstOnlyInput = document.getElementById(`first-only-${idx}`);
+    if (firstOnlyInput && existingFirst) firstOnlyInput.value = existingFirst;
   } else {
-    // Unchecked state
     box.style.background = 'transparent';
-    box.style.borderColor = '';
     box.style.borderColor = '#7a858a';
     checkIcon.classList.add('hidden');
     contactFields.classList.remove('hidden');
     firstOnlyFields.classList.add('hidden');
+    // Restore the first name back to the full contact field
+    const firstOnlyVal = document.getElementById(`first-only-${idx}`)?.value.trim() || '';
+    const firstInput = document.getElementById(`first-${idx}`);
+    if (firstInput && firstOnlyVal) firstInput.value = firstOnlyVal;
   }
 }
 
@@ -1414,6 +1718,7 @@ function submitCheckin() {
 
   renderQueue();
   updateStats();
+  renderTurns();
 }
 
 // ── Queue (Front Desk) ───────────────────────────
@@ -1421,8 +1726,13 @@ function renderQueue() {
   const list = document.getElementById('queue-list');
   const empty = document.getElementById('queue-empty');
 
-  const filtered = currentFilter === 'all' ? queue
+  let filtered = currentFilter === 'all' ? queue
     : queue.filter(e => e.status === currentFilter);
+
+  // Hide done entries if toggle is off (only when viewing 'all')
+  if (currentFilter === 'all' && !showDoneInQueue) {
+    filtered = filtered.filter(e => e.status !== 'done');
+  }
 
   // Sort: waiting first, then inservice, then done
   const order = { waiting: 0, inservice: 1, done: 2 };
@@ -1466,95 +1776,83 @@ function buildQueueRow(e) {
     const serviceLabels = e.services.map(sid => SERVICES.find(s=>s.id===sid)?.label || sid).join(', ') || '—';
     const badgeClass = { waiting: 'badge-waiting', inservice: 'badge-inservice', done: 'badge-done' }[e.status];
     const badgeLabel = { waiting: 'Waiting', inservice: 'In Service', done: 'Done' }[e.status];
-    const apptBadge = e.isAppointment
-      ? `<span class="badge-appointment text-[11px] px-2 py-0.5 rounded-full font-body font-semibold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:11px">calendar_today</span>Appt</span>`
-      : '';
-    const assignSummary = (e.assignments || []).filter(a => a.techId || a.station || a.cost).map(a => {
+    const apptBadge = e.isAppointment ? `<span class="badge-appointment text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold">Appt</span>` : '';
+    const assignSummary = (e.assignments || []).filter(a => a.techId || a.cost).map(a => {
       const tech = STAFF.find(s => s.id === a.techId);
       const svc  = SERVICES.find(s => s.id === a.serviceId);
-      const parts = [];
-      if (svc)       parts.push(svc.label);
-      if (tech)      parts.push(`→ ${tech.name}`);
-      if (a.station) parts.push(`@ ${a.station}`);
-      if (a.cost)    parts.push(`$${a.cost.toFixed(2)}`);
+      const svcStatus = getAssignmentStatus(e, a);
+      const statusDot = svcStatus === 'done' ? '✓ ' : svcStatus === 'inservice' ? '● ' : '○ ';
+      const parts = [statusDot + (svc ? svc.label : '')];
+      if (tech)      parts.push('→ ' + tech.name);
+      if (a.station) parts.push('@ ' + a.station);
+      if (a.cost)    parts.push('$' + Number(a.cost).toFixed(2));
       return parts.join(' ');
     }).join(' · ');
-    const totalDisplay = e.totalCost ? `<span class="font-semibold text-primary">$${e.totalCost.toFixed(2)}</span>` : '';
+    const totalDisplay = e.totalCost ? `<span class="font-semibold text-primary ml-1">$${e.totalCost.toFixed(2)}</span>` : '';
     const cardBg = e.status === 'done'
       ? 'bg-surface-container-high border-surface-container-highest opacity-70'
       : `bg-surface-container-lowest ${e.isAppointment ? 'border-primary/40' : 'border-surface-container-high'}`;
-    const groupDot = e.groupId
-      ? `<span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${e.groupColor}" title="Party"></span>`
-      : '';
-    const groupLabel = e.groupLabel
-      ? `<span class="text-[10px] font-body italic" style="color:${e.groupColor}">${e.groupLabel}</span>`
-      : '';
+    const groupBorderStyle = e.groupId && e.status !== 'done' ? `border-left:4px solid ${e.groupColor};` : '';
+    const groupDot = e.groupId ? `<span class="inline-block w-2 h-2 rounded-full flex-shrink-0 mr-0.5" style="background:${e.groupColor}"></span>` : '';
+    const groupTag = e.groupLabel ? `<span class="text-[10px] font-body italic" style="color:${e.groupColor}">${e.groupLabel}</span>` : '';
+    const btnCls = `flex items-center justify-center min-w-[44px] self-stretch rounded-xl transition-all active:scale-95 border-0 cursor-pointer px-3`;
+    const id = e.id;
     return `
-      <div class="queue-row ${cardBg} rounded-xl p-4 border flex items-center gap-4" data-id="${e.id}">
-        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-headline font-bold"
-          style="${e.groupId ? `background:${e.groupColor}20; color:${e.groupColor}; border:2px solid ${e.groupColor}` : e.status === 'done' ? 'background:#c2cacd;color:#4a5258' : e.isAppointment ? 'background:#1a5252;color:#ffffff' : 'background:#8fd4d3;color:#0a2e2e'}">
-          ${e.name.charAt(0).toUpperCase()}
-        </div>
-        <div class="flex-grow min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            ${groupDot}
-            <span class="font-headline font-semibold text-on-surface text-base">${e.name}</span>
-            <span class="text-[11px] px-2 py-0.5 rounded-full font-body font-semibold ${badgeClass}">${badgeLabel}</span>
-            ${apptBadge}
-            ${totalDisplay}
+      <div class="queue-row ${cardBg} rounded-xl py-1.5 px-3 border flex items-stretch gap-1.5" data-id="${id}" style="${groupBorderStyle}">
+        <div class="flex-grow min-w-0 py-1">
+          <div class="flex items-center gap-1 flex-wrap leading-tight">
+            ${groupDot}<span class="font-headline font-semibold text-on-surface text-sm">${e.name}</span>${groupTag ? ' ' + groupTag : ''}
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold ${badgeClass}">${badgeLabel}</span>
+            ${apptBadge}${totalDisplay}
           </div>
-          ${groupLabel ? `<div class="mt-0.5">${groupLabel}</div>` : ''}
-          <div class="text-xs font-body text-on-surface-variant mt-0.5 truncate">${serviceLabels}</div>
-          ${assignSummary ? `<div class="text-[11px] font-body text-primary mt-0.5 truncate">${assignSummary}</div>` : ''}
-          <div class="text-[11px] font-body text-outline mt-0.5">${timeStr}${e.phone ? ' · ' + e.phone : ''}</div>
+          <div class="text-[11px] font-body text-on-surface-variant truncate">${serviceLabels}</div>
+          ${assignSummary ? `<div class="text-[11px] font-body text-primary truncate">${assignSummary}</div>` : ''}
+          <div class="text-[10px] font-body text-outline">${timeStr}${e.phone ? ' · ' + e.phone : ''}</div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <button onclick="showGroupAssignModal('${e.id}')" title="Assign & Price"
-            class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
-            <span class="material-symbols-outlined" style="font-size:22px">assignment_ind</span>
-          </button>
-          ${e.groupId ? `
-          <button onclick="showSplitMergeModal('${e.id}')" title="Split / Merge"
-            class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
-            <span class="material-symbols-outlined" style="font-size:22px">call_split</span>
-          </button>` : `
-          <button onclick="showMergeSelectModal('${e.id}')" title="Merge with another guest"
-            class="q-action-btn bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
-            <span class="material-symbols-outlined" style="font-size:22px">merge</span>
-          </button>`}
-          ${e.status === 'waiting' ? `
-            <button onclick="tryAdvanceStatus('${e.id}','inservice')" title="Move to In Service"
-              class="q-action-btn bg-primary-container hover:bg-primary text-primary hover:text-on-primary">
-              <span class="material-symbols-outlined" style="font-size:22px">play_circle</span>
-            </button>` : ''}
+        <div class="flex items-stretch gap-1 flex-shrink-0">
+          <button onclick="showGroupAssignModal('${id}')" title="Assign & Price" class="${btnCls} bg-surface-container hover:bg-surface-container-high text-on-surface-variant"><span class="material-symbols-outlined" style="font-size:19px">assignment_ind</span></button>
+          ${e.groupId
+            ? `<button onclick="showSplitMergeModal('${id}')" title="Split/Merge" class="${btnCls} bg-surface-container hover:bg-surface-container-high text-on-surface-variant"><span class="material-symbols-outlined" style="font-size:19px">call_split</span></button>`
+            : `<button onclick="showMergeSelectModal('${id}')" title="Merge" class="${btnCls} bg-surface-container hover:bg-surface-container-high text-on-surface-variant"><span class="material-symbols-outlined" style="font-size:19px">merge</span></button>`}
+          ${e.status === 'waiting' ? `<button onclick="tryAdvanceStatus('${id}','inservice')" title="In Service" class="${btnCls}" style="background:#8fd4d3;color:#0a2e2e;"><span class="material-symbols-outlined" style="font-size:19px">play_circle</span></button>` : ''}
           ${e.status === 'inservice' ? `
-            <button onclick="tryAdvanceStatus('${e.id}','done')" title="Mark Done"
-              class="q-action-btn bg-primary-container hover:bg-primary text-primary hover:text-on-primary">
-              <span class="material-symbols-outlined" style="font-size:22px">check_circle</span>
-            </button>` : ''}
-          ${e.status === 'done' ? `
-            <button onclick="confirmReopen('${e.id}')" title="Reopen Ticket"
-              class="q-action-btn bg-surface-container hover:bg-secondary-container text-outline-variant hover:text-secondary">
-              <span class="material-symbols-outlined" style="font-size:22px">undo</span>
-            </button>` : ''}
-          <button onclick="removeFromQueue('${e.id}')" title="Remove"
-            class="q-action-btn bg-surface-container hover:bg-error/20 text-outline hover:text-error">
-            <span class="material-symbols-outlined" style="font-size:20px">close</span>
-          </button>
+            <button onclick="updateStatus('${id}','waiting')" title="Back to Waiting" class="${btnCls}" style="background:#f5c870;color:#3a2800;"><span class="material-symbols-outlined" style="font-size:19px">arrow_back</span></button>
+            <button onclick="tryAdvanceStatus('${id}','done')" title="Done" class="${btnCls}" style="background:#c2cacd;color:#333;"><span class="material-symbols-outlined" style="font-size:19px">check_circle</span></button>` : ''}
+          ${e.status === 'done' ? `<button onclick="confirmReopen('${id}')" title="Reopen" class="${btnCls} bg-surface-container hover:bg-secondary-container text-outline-variant"><span class="material-symbols-outlined" style="font-size:19px">undo</span></button>` : ''}
+          <button onclick="removeFromQueue('${id}')" title="Remove" class="${btnCls} bg-surface-container hover:bg-error/20 text-outline hover:text-error"><span class="material-symbols-outlined" style="font-size:17px">close</span></button>
         </div>
-      </div>
-    `;
+      </div>`;
 }
 
 function updateStatus(id, status) {
   const entry = queue.find(e => String(e.id) === String(id));
-  if (entry) {
+  if (!entry) return;
+  // When setting from queue buttons: only update assignments that are currently
+  // in the source state — don't override assignments that are already more advanced
+  if (entry.assignments && entry.assignments.length > 0) {
+    if (status === 'inservice') {
+      // Move waiting services → inservice (only if they have a tech assigned)
+      entry.assignments.forEach(a => {
+        if (a.techId && getAssignmentStatus(entry, a) === 'waiting') a.status = 'inservice';
+      });
+    } else if (status === 'waiting') {
+      // Move inservice services back → waiting
+      entry.assignments.forEach(a => {
+        if (getAssignmentStatus(entry, a) === 'inservice') a.status = 'waiting';
+      });
+    } else if (status === 'done') {
+      // Mark all assigned services done
+      entry.assignments.forEach(a => { if (a.techId) a.status = 'done'; });
+    }
+    entry.status = deriveEntryStatus(entry);
+  } else {
     entry.status = status;
-    if (status === 'done') saveRecord(entry);
-    updateSheetsRow(entry);
-    renderQueue();
-    updateStats();
   }
+  if (entry.status === 'done') saveRecord(entry);
+  updateSheetsRow(entry);
+  renderQueue();
+  updateStats();
+  renderTurns();
 }
 
 function removeFromQueue(id) {
@@ -1585,17 +1883,44 @@ function updateStats() {
 
 // ── Dashboard Panel Switching ─────────────────────
 function showDashPanel(panel) {
-  ['queue','reports','transactions','services','staff','settings'].forEach(p => {
+  ['queue','reports','transactions','services','staff','turns','settings'].forEach(p => {
     document.getElementById(`panel-${p}`)?.classList.remove('active');
     document.getElementById(`nav-${p}`)?.classList.remove('active');
   });
   document.getElementById(`panel-${panel}`)?.classList.add('active');
   document.getElementById(`nav-${panel}`)?.classList.add('active');
   if (panel === 'services')      renderServicesList();
-  if (panel === 'staff')         { renderStaffList(); renderFdUsersList(); }
+  if (panel === 'staff')         { renderStaffList(); renderFdUsersList(); showStaffListView(); }
   if (panel === 'reports')       { setReportRange('today'); }
   if (panel === 'transactions')  renderTransactions();
   if (panel === 'settings')      renderSettingsPanel();
+  if (panel === 'turns') {
+    const di = document.getElementById('turns-history-date');
+    if (di && !di.value) di.value = new Date().toISOString().slice(0,10);
+    const bc = document.getElementById('turns-break-count');
+    if (bc) bc.textContent = turnsBreakStaff.length;
+    renderTurns();
+  }
+}
+
+function toggleStaffScheduleView() {
+  const listView     = document.getElementById('staff-list-view');
+  const scheduleView = document.getElementById('staff-schedule-view');
+  const btn          = document.getElementById('schedule-view-btn');
+  if (!listView || !scheduleView) return;
+  const showingSchedule = !scheduleView.classList.contains('hidden');
+  listView.classList.toggle('hidden', !showingSchedule);
+  scheduleView.classList.toggle('hidden', showingSchedule);
+  btn.style.background = showingSchedule ? '' : '#1a5252';
+  btn.style.color = showingSchedule ? '' : '#ffffff';
+  if (!showingSchedule) renderSchedule();
+}
+
+function showStaffListView() {
+  document.getElementById('staff-list-view')?.classList.remove('hidden');
+  document.getElementById('staff-schedule-view')?.classList.add('hidden');
+  const btn = document.getElementById('schedule-view-btn');
+  if (btn) { btn.style.background = ''; btn.style.color = ''; }
 }
 
 // ── Services CRUD ────────────────────────────────
@@ -1608,7 +1933,10 @@ function renderServicesList() {
         <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
           <span class="text-xs font-headline font-bold text-on-primary">${s.abbr}</span>
         </div>
-        <span class="font-headline font-semibold text-on-surface text-base">${s.label}</span>
+        <div>
+          <span class="font-headline font-semibold text-on-surface text-base">${s.label}</span>
+          ${s.baseCost != null ? `<div class="text-xs font-body text-on-surface-variant mt-0.5">Base: $${Number(s.baseCost).toFixed(2)}</div>` : ''}
+        </div>
       </div>
       <div class="flex items-center gap-1">
         <button onclick="showEditService('${s.id}')" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
@@ -1626,6 +1954,7 @@ function showAddService() {
   document.getElementById('service-modal-title').textContent = 'Add Service';
   document.getElementById('service-name-input').value = '';
   document.getElementById('service-abbr-input').value = '';
+  document.getElementById('service-base-cost-input').value = '';
   document.getElementById('service-edit-id').value = '';
   document.getElementById('service-modal').classList.remove('hidden');
   document.getElementById('service-modal').style.display = 'flex';
@@ -1638,6 +1967,7 @@ function showEditService(id) {
   document.getElementById('service-modal-title').textContent = 'Edit Service';
   document.getElementById('service-name-input').value = svc.label;
   document.getElementById('service-abbr-input').value = svc.abbr;
+  document.getElementById('service-base-cost-input').value = svc.baseCost != null ? svc.baseCost : '';
   document.getElementById('service-edit-id').value = id;
   document.getElementById('service-modal').classList.remove('hidden');
   document.getElementById('service-modal').style.display = 'flex';
@@ -1649,16 +1979,18 @@ function closeServiceModal() {
 }
 
 function saveService() {
-  const label = document.getElementById('service-name-input').value.trim();
-  const abbr  = document.getElementById('service-abbr-input').value.trim();
-  const editId = document.getElementById('service-edit-id').value;
+  const label    = document.getElementById('service-name-input').value.trim();
+  const abbr     = document.getElementById('service-abbr-input').value.trim();
+  const baseCostRaw = document.getElementById('service-base-cost-input').value.trim();
+  const baseCost = baseCostRaw !== '' ? parseFloat(baseCostRaw) : null;
+  const editId   = document.getElementById('service-edit-id').value;
   if (!label) { showToast('Please enter a service name.'); return; }
   if (!abbr)  { showToast('Please enter an abbreviation.'); return; }
   if (editId) {
     const svc = SERVICES.find(s => s.id === editId);
-    if (svc) { svc.label = label; svc.abbr = abbr; }
+    if (svc) { svc.label = label; svc.abbr = abbr; svc.baseCost = baseCost; }
   } else {
-    SERVICES.push({ id: `svc-${Date.now()}`, label, abbr });
+    SERVICES.push({ id: `svc-${Date.now()}`, label, abbr, baseCost });
   }
   saveServicesToStorage();
   closeServiceModal();
@@ -1680,18 +2012,32 @@ function deleteService(id) {
 function renderStaffList() {
   const list = document.getElementById('staff-list');
   if (!list) return;
-  list.innerHTML = STAFF.map(st => `
+  list.innerHTML = STAFF.map(st => {
+    const photoHtml = st.photo
+      ? `<img src="${st.photo}" class="w-10 h-10 rounded-full object-cover border border-surface-container-high">`
+      : `<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center"><span class="text-sm font-headline font-bold text-on-surface">${st.name.charAt(0).toUpperCase()}</span></div>`;
+
+    // Services this tech does (empty = all services)
+    const staffSvcs = (st.services && st.services.length > 0)
+      ? st.services.map(sid => SERVICES.find(s=>s.id===sid)?.abbr || '?').join(', ')
+      : 'All services';
+
+    return `
     <div class="bg-surface-container-lowest rounded-xl px-5 py-4 border border-surface-container-high flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
-          <span class="text-sm font-headline font-bold text-on-surface">${st.name.charAt(0).toUpperCase()}</span>
-        </div>
-        <div>
+      <div class="flex items-center gap-4 min-w-0">
+        ${photoHtml}
+        <div class="min-w-0">
           <div class="font-headline font-semibold text-on-surface text-base">${st.name}</div>
-          ${st.commission != null ? `<div class="text-xs font-body text-on-surface-variant">${st.commission}% commission</div>` : ''}
+          <div class="flex gap-3 flex-wrap mt-0.5">
+            ${st.commission != null ? `<span class="text-xs font-body text-on-surface-variant">${st.commission}% commission</span>` : ''}
+            <span class="text-xs font-body text-primary truncate">${staffSvcs}</span>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button onclick="showStaffPhotoModal('${st.id}')" title="Photo" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
+          <span class="material-symbols-outlined" style="font-size:18px">photo_camera</span>
+        </button>
         <button onclick="showEditStaff('${st.id}')" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
           <span class="material-symbols-outlined" style="font-size:18px">edit</span>
         </button>
@@ -1700,7 +2046,21 @@ function renderStaffList() {
         </button>
       </div>
     </div>
-  `).join('');
+  `}).join('');
+}
+
+function renderStaffServicesPicker(selectedServices) {
+  const picker = document.getElementById('staff-services-picker');
+  if (!picker) return;
+  picker.innerHTML = SERVICES.map(s => {
+    const sel = selectedServices && selectedServices.includes(s.id);
+    return `
+      <button type="button" onclick="this.classList.toggle('selected')" data-service="${s.id}"
+        class="service-btn flex flex-col items-center justify-center py-2 rounded-lg border transition-all text-xs ${sel ? 'bg-primary text-on-primary border-primary selected' : 'bg-surface-container text-on-surface-variant border-outline-variant/30'}">
+        <span class="font-headline font-bold">${s.abbr}</span>
+        <span class="text-[9px] font-body mt-0.5 uppercase tracking-tighter">${s.label}</span>
+      </button>`;
+  }).join('');
 }
 
 function showAddStaff() {
@@ -1708,6 +2068,7 @@ function showAddStaff() {
   document.getElementById('staff-name-input').value = '';
   document.getElementById('staff-commission-input').value = '';
   document.getElementById('staff-edit-id').value = '';
+  renderStaffServicesPicker([]);
   document.getElementById('staff-modal').classList.remove('hidden');
   document.getElementById('staff-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('staff-name-input').focus(), 100);
@@ -1720,6 +2081,7 @@ function showEditStaff(id) {
   document.getElementById('staff-name-input').value = st.name;
   document.getElementById('staff-commission-input').value = st.commission != null ? st.commission : '';
   document.getElementById('staff-edit-id').value = id;
+  renderStaffServicesPicker(st.services || []);
   document.getElementById('staff-modal').classList.remove('hidden');
   document.getElementById('staff-modal').style.display = 'flex';
 }
@@ -1734,15 +2096,16 @@ function saveStaff() {
   const commRaw = document.getElementById('staff-commission-input').value.trim();
   const commission = commRaw !== '' ? parseFloat(commRaw) : null;
   const editId = document.getElementById('staff-edit-id').value;
+  const selectedSvcs = [...document.querySelectorAll('#staff-services-picker .service-btn.selected')].map(b => b.dataset.service);
   if (!name) { showToast('Please enter a name.'); return; }
   if (commission !== null && (isNaN(commission) || commission < 0 || commission > 100)) {
     showToast('Commission must be 0–100.'); return;
   }
   if (editId) {
     const st = STAFF.find(s => s.id === editId);
-    if (st) { st.name = name; st.commission = commission; }
+    if (st) { st.name = name; st.commission = commission; st.services = selectedSvcs; }
   } else {
-    STAFF.push({ id: `staff-${Date.now()}`, name, commission });
+    STAFF.push({ id: `staff-${Date.now()}`, name, commission, services: selectedSvcs });
   }
   saveStaffToStorage();
   closeStaffModal();
@@ -1808,13 +2171,14 @@ function renderManualGuestCard(idx) {
         <div class="ac-input-wrap">
           <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">First Name</label>
           <input id="manual-first-${idx}" type="text" placeholder="First" autocomplete="off"
-            oninput="acSearchManual(this, ${idx}, 'first')"
+            oninput="acSearchManual(this, ${idx}, 'first'); autoCapitalize(this)"
             class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
           <div id="mac-first-${idx}" class="autocomplete-list hidden"></div>
         </div>
         <div>
           <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">Last Name</label>
           <input id="manual-last-${idx}" type="text" placeholder="Last"
+            oninput="autoCapitalize(this)"
             class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
         </div>
       </div>
@@ -1824,6 +2188,7 @@ function renderManualGuestCard(idx) {
     <div id="manual-firstonly-fields-${idx}" class="hidden">
       <label class="text-[11px] font-body font-semibold text-outline-variant uppercase tracking-widest block mb-1">First Name</label>
       <input id="manual-firstonly-${idx}" type="text" placeholder="First"
+        oninput="autoCapitalize(this)"
         class="w-full border-b border-surface-container-high bg-transparent py-2 text-base font-headline focus:border-primary transition-colors placeholder:text-surface-container-highest">
     </div>` : ''}
 
@@ -1878,6 +2243,10 @@ function removeManualGuest(idx) {
 function closeManualAdd() {
   document.getElementById('manual-modal').classList.add('hidden');
   document.getElementById('manual-modal').style.display = '';
+  // Reset form so stale data never shows on next open
+  manualGuestCount = 0;
+  const container = document.getElementById('manual-guests-container');
+  if (container) container.innerHTML = '';
 }
 
 function submitManualAdd() {
@@ -1939,6 +2308,7 @@ function submitManualAdd() {
 
   renderQueue();
   updateStats();
+  renderTurns(); // always refresh turns so waiting panel updates immediately
   closeManualAdd();
   showToast(`${newEntries.map(e => e.name).join(' & ')} added to queue`);
 }
@@ -2143,9 +2513,13 @@ function runReport() {
   filtered.forEach(r => {
     (r.assignments || []).forEach(a => {
       if (!a.techId) return;
-      if (!staffMap[a.techId]) staffMap[a.techId] = { income: 0, count: 0 };
+      if (!staffMap[a.techId]) staffMap[a.techId] = { income: 0, count: 0, fullTurns: 0, halfTurns: 0, bonusTurns: 0 };
       staffMap[a.techId].income += a.cost || 0;
       staffMap[a.techId].count++;
+      const cost = a.cost || 0;
+      if (cost >= 28)       staffMap[a.techId].fullTurns  += 1;
+      else if (cost >= 12)  staffMap[a.techId].halfTurns  += 0.5;
+      else                  staffMap[a.techId].bonusTurns += 1;
     });
   });
   const staffBreakdown = document.getElementById('rpt-staff-breakdown');
@@ -2157,6 +2531,7 @@ function runReport() {
       const tech = STAFF.find(s => s.id === techId);
       const name = tech?.name || 'Unknown';
       const comm = tech?.commission != null ? (data.income * tech.commission / 100) : null;
+      const totalTurns = data.fullTurns + data.halfTurns;
       return `
         <div class="bg-surface-container-lowest rounded-xl px-5 py-3 border border-surface-container-high flex items-center justify-between cursor-pointer hover:bg-surface-container transition-colors" onclick="drillDownStaff('${techId}')">
           <div class="flex items-center gap-3">
@@ -2165,7 +2540,11 @@ function runReport() {
             </div>
             <div>
               <div class="font-headline font-semibold text-on-surface text-sm">${name}</div>
-              <div class="text-xs font-body text-on-surface-variant">${data.count} service${data.count !== 1 ? 's' : ''} · tap for details</div>
+              <div class="text-xs font-body text-on-surface-variant flex gap-3">
+                <span>${data.count} service${data.count !== 1 ? 's' : ''}</span>
+                <span class="text-primary font-semibold">${totalTurns} turns</span>
+                ${data.bonusTurns > 0 ? `<span class="text-secondary">+${data.bonusTurns} bonus</span>` : ''}
+              </div>
             </div>
           </div>
           <div class="text-right flex items-center gap-3">
@@ -2392,11 +2771,12 @@ function exportReportExcel() {
     }),
     [],
     ['STAFF BREAKDOWN'],
-    ['Technician','Services','Income','Commission %','Commission Earned'],
+    ['Technician','Services','Turns','Bonus Turns','Income','Commission %','Commission Earned'],
     ...Object.entries(d.staffMap).map(([techId, data]) => {
       const tech = STAFF.find(s=>s.id===techId);
       const comm = tech?.commission != null ? (data.income * tech.commission / 100) : 0;
-      return [tech?.name||'Unknown', data.count, `$${data.income.toFixed(2)}`, tech?.commission!=null?`${tech.commission}%`:'N/A', `$${comm.toFixed(2)}`];
+      const totalTurns = data.fullTurns + data.halfTurns;
+      return [tech?.name||'Unknown', data.count, totalTurns, data.bonusTurns, `$${data.income.toFixed(2)}`, tech?.commission!=null?`${tech.commission}%`:'N/A', `$${comm.toFixed(2)}`];
     }),
     [],
     ['SERVICES BREAKDOWN'],
@@ -2563,6 +2943,23 @@ function autoCapitalize(input) {
 // ── Settings Panel ────────────────────────────────
 // Persist which services are shown on customer-facing check-in
 let hiddenCheckinServices = JSON.parse(localStorage.getItem('muse_hidden_services') || '[]');
+let showDoneInQueue = true; // toggle for hiding done cards
+let inactiveStaff = JSON.parse(localStorage.getItem('muse_inactive_staff') || '[]');
+
+
+function saveInactiveStaff()  { localStorage.setItem('muse_inactive_staff',  JSON.stringify(inactiveStaff));  }
+
+function isStaffActive(id) { return !inactiveStaff.includes(id); }
+function getActiveStaff()  { return STAFF.filter(s => isStaffActive(s.id)); }
+
+function toggleDoneVisibility() {
+  showDoneInQueue = !showDoneInQueue;
+  const icon  = document.getElementById('done-toggle-icon');
+  const label = document.getElementById('done-toggle-label');
+  if (icon)  icon.textContent  = showDoneInQueue ? 'visibility_off' : 'visibility';
+  if (label) label.textContent = showDoneInQueue ? 'Hide Done' : 'Show Done';
+  renderQueue();
+}
 
 function isServiceVisibleOnCheckin(id) {
   return !hiddenCheckinServices.includes(id);
@@ -2572,7 +2969,9 @@ function saveHiddenServices() {
   localStorage.setItem('muse_hidden_services', JSON.stringify(hiddenCheckinServices));
 }
 
-function renderSettingsPanel() {
+function renderSettingsPanel() { /* sections render on open */ }
+
+function renderSettingsServiceVisibility() {
   const container = document.getElementById('settings-service-visibility');
   if (!container) return;
   container.innerHTML = SERVICES.map(s => {
@@ -2585,36 +2984,1148 @@ function renderSettingsPanel() {
           </div>
           <span class="font-body font-semibold text-on-surface">${s.label}</span>
         </div>
-        <button onclick="toggleCheckinService('${s.id}')" id="vis-btn-${s.id}"
+        <button onclick="toggleCheckinService('${s.id}')"
           class="relative w-12 h-6 rounded-full transition-colors ${visible ? 'bg-primary' : 'bg-surface-container-high'}">
           <div class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${visible ? 'left-6' : 'left-0.5'}"></div>
         </button>
-      </div>
-    `;
+      </div>`;
+  }).join('');
+}
+
+function renderSettingsActiveStaff() {
+  const container = document.getElementById('settings-active-staff');
+  if (!container) return;
+  container.innerHTML = STAFF.map(st => {
+    const active = isStaffActive(st.id);
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-surface-container-high last:border-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+            <span class="text-sm font-headline font-bold text-on-surface">${st.name.charAt(0)}</span>
+          </div>
+          <span class="font-body font-semibold text-on-surface ${active ? '' : 'line-through text-outline-variant'}">${st.name}</span>
+        </div>
+        <button onclick="toggleActiveStaff('${st.id}')"
+          class="relative w-12 h-6 rounded-full transition-colors ${active ? 'bg-primary' : 'bg-surface-container-high'}">
+          <div class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${active ? 'left-6' : 'left-0.5'}"></div>
+        </button>
+      </div>`;
   }).join('');
 }
 
 function toggleCheckinService(id) {
-  if (hiddenCheckinServices.includes(id)) {
-    hiddenCheckinServices = hiddenCheckinServices.filter(x => x !== id);
-  } else {
-    hiddenCheckinServices.push(id);
-  }
+  if (hiddenCheckinServices.includes(id)) hiddenCheckinServices = hiddenCheckinServices.filter(x => x !== id);
+  else hiddenCheckinServices.push(id);
   saveHiddenServices();
-  renderSettingsPanel();
+  renderSettingsServiceVisibility();
 }
 
 function toggleAllCheckinServices() {
-  if (hiddenCheckinServices.length === 0) {
-    // Hide all
-    hiddenCheckinServices = SERVICES.map(s => s.id);
-  } else {
-    // Show all
-    hiddenCheckinServices = [];
-  }
+  hiddenCheckinServices = hiddenCheckinServices.length === 0 ? SERVICES.map(s => s.id) : [];
   saveHiddenServices();
-  renderSettingsPanel();
+  renderSettingsServiceVisibility();
 }
+
+function toggleActiveStaff(id) {
+  if (inactiveStaff.includes(id)) inactiveStaff = inactiveStaff.filter(x => x !== id);
+  else inactiveStaff.push(id);
+  saveInactiveStaff();
+  renderSettingsActiveStaff();
+}
+
+function toggleAllActiveStaff() {
+  inactiveStaff = inactiveStaff.length === 0 ? STAFF.map(s => s.id) : [];
+  saveInactiveStaff();
+  renderSettingsActiveStaff();
+}
+
+// ── Staff Photo ───────────────────────────────────
+let staffPhotoTargetId = null;
+let staffPhotoDataUrl  = null;
+
+function showStaffPhotoModal(staffId) {
+  staffPhotoTargetId = staffId;
+  staffPhotoDataUrl  = null;
+  const st = STAFF.find(s => s.id === staffId);
+  if (!st) return;
+  document.getElementById('staff-photo-target-id').value = staffId;
+  document.getElementById('staff-photo-initial').textContent = st.name.charAt(0).toUpperCase();
+  const preview = document.getElementById('staff-photo-preview');
+  if (st.photo) {
+    preview.innerHTML = `<img src="${st.photo}" class="w-full h-full object-cover rounded-full">`;
+  } else {
+    preview.innerHTML = `<span class="text-3xl font-headline font-bold text-on-surface-variant">${st.name.charAt(0).toUpperCase()}</span>`;
+  }
+  document.getElementById('staff-photo-input').value = '';
+  document.getElementById('staff-photo-modal').classList.remove('hidden');
+  document.getElementById('staff-photo-modal').style.display = 'flex';
+}
+
+function closeStaffPhotoModal() {
+  document.getElementById('staff-photo-modal').classList.add('hidden');
+  document.getElementById('staff-photo-modal').style.display = '';
+  staffPhotoTargetId = null;
+  staffPhotoDataUrl  = null;
+}
+
+function handleStaffPhotoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('Photo must be under 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    staffPhotoDataUrl = e.target.result;
+    const preview = document.getElementById('staff-photo-preview');
+    preview.innerHTML = `<img src="${staffPhotoDataUrl}" class="w-full h-full object-cover rounded-full">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveStaffPhoto() {
+  const st = STAFF.find(s => s.id === staffPhotoTargetId);
+  if (!st) return;
+  if (staffPhotoDataUrl) st.photo = staffPhotoDataUrl;
+  saveStaffToStorage();
+  closeStaffPhotoModal();
+  renderStaffList();
+  renderSchedule();
+  showToast('Photo saved');
+}
+
+function clearStaffPhoto() {
+  const st = STAFF.find(s => s.id === staffPhotoTargetId);
+  if (!st) return;
+  delete st.photo;
+  saveStaffToStorage();
+  closeStaffPhotoModal();
+  renderStaffList();
+  renderSchedule();
+  showToast('Photo removed');
+}
+
+// ── Schedule Calendar ─────────────────────────────
+const SCHEDULE_COLORS = {
+  working:  { bg: '#1a5252', text: '#ffffff', label: 'Working' },
+  off:      { bg: '#f5c870', text: '#3a2800', label: 'Off' },
+  sick:     { bg: '#fa746f', text: '#ffffff', label: 'Sick' },
+  vacation: { bg: '#adb3b5', text: '#000000', label: 'Vacation' },
+};
+
+// scheduleData: { 'YYYY-MM-DD': { staffId: status } }
+let scheduleData = JSON.parse(localStorage.getItem('muse_schedule') || '{}');
+let scheduleWeekStart = getWeekStart(new Date());
+let schedulePickerTarget = null; // { date, staffId }
+
+function saveScheduleData() { localStorage.setItem('muse_schedule', JSON.stringify(scheduleData)); }
+
+function getWeekStart(d) {
+  const date = new Date(d);
+  date.setHours(0,0,0,0);
+  const day = date.getDay();
+  date.setDate(date.getDate() - day);
+  return date;
+}
+
+function scheduleWeekOffset(delta, goToToday = false) {
+  if (goToToday) {
+    scheduleWeekStart = getWeekStart(new Date());
+  } else {
+    scheduleWeekStart = new Date(scheduleWeekStart);
+    scheduleWeekStart.setDate(scheduleWeekStart.getDate() + delta * 7);
+  }
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const grid = document.getElementById('schedule-grid');
+  const label = document.getElementById('schedule-week-label');
+  if (!grid || !label) return;
+
+  const weekEnd = new Date(scheduleWeekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const fmtShort = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  label.textContent = `${fmtShort(scheduleWeekStart)} – ${fmtShort(weekEnd)}`;
+
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dates = days.map((_, i) => {
+    const d = new Date(scheduleWeekStart);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isToday = d => d.toDateString() === today.toDateString();
+
+  // Header row
+  const headerCols = dates.map((d, i) => `
+    <div class="text-center px-2 py-2 min-w-[90px]">
+      <div class="text-[11px] font-body font-semibold text-on-surface-variant uppercase tracking-widest">${days[i]}</div>
+      <div class="text-sm font-headline font-bold ${isToday(d) ? 'text-primary' : 'text-on-surface'}">${d.getDate()}</div>
+    </div>
+  `).join('');
+
+  // Staff rows
+  const staffRows = STAFF.map(st => {
+    const photoHtml = st.photo
+      ? `<img src="${st.photo}" class="w-9 h-9 rounded-full object-cover border border-surface-container-high flex-shrink-0">`
+      : `<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0"><span class="text-xs font-headline font-bold text-on-surface">${st.name.charAt(0).toUpperCase()}</span></div>`;
+
+    const cells = dates.map(d => {
+      const key = d.toISOString().slice(0,10);
+      const status = getScheduleStatus(key, st.id);
+      const isRepeat = !scheduleData[key]?.[st.id] && scheduleData._repeats?.[st.id]?.[d.getDay()];
+      const sColor = status ? SCHEDULE_COLORS[status] : null;
+      const cellStyle = sColor ? `background:${sColor.bg};color:${sColor.text};` : '';
+      const cellLabel = sColor ? sColor.label : '';
+      const isPast = d < today && !isToday(d);
+      return `
+        <div class="min-w-[90px] px-1 py-1">
+          <button onclick="openSchedulePicker('${key}','${st.id}')"
+            class="w-full h-10 rounded-lg text-xs font-body font-semibold transition-all hover:opacity-80 border relative ${sColor ? 'border-transparent' : 'border-dashed border-outline-variant/50 hover:bg-surface-container'} ${isPast ? 'opacity-50' : ''}"
+            style="${cellStyle}">
+            ${cellLabel}
+            ${isRepeat ? '<span style="position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.7)"></span>' : ''}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="flex items-center border-b border-surface-container-high last:border-0">
+        <div class="flex items-center gap-2 min-w-[130px] pr-3 py-2 flex-shrink-0">
+          ${photoHtml}
+          <span class="text-sm font-body font-semibold text-on-surface truncate">${st.name}</span>
+        </div>
+        ${cells}
+      </div>
+    `;
+  }).join('');
+
+  grid.innerHTML = `
+    <div class="flex items-center border-b-2 border-surface-container-high">
+      <div class="min-w-[130px] flex-shrink-0"></div>
+      ${headerCols}
+    </div>
+    ${staffRows || '<div class="text-sm font-body text-on-surface-variant py-8 text-center">No staff added yet. Add staff in the Staff tab.</div>'}
+  `;
+}
+
+function openSchedulePicker(date, staffId) {
+  schedulePickerTarget = { date, staffId };
+  const st = STAFF.find(s => s.id === staffId);
+  const d  = new Date(date + 'T12:00:00');
+  const fmtDate = d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+  document.getElementById('schedule-picker-label').textContent = `${st?.name || ''} — ${fmtDate}`;
+
+  // Reset repeat toggle
+  const cb  = document.getElementById('repeat-toggle-cb');
+  const box = document.getElementById('repeat-toggle-box');
+  const chk = document.getElementById('repeat-toggle-check');
+  if (cb)  cb.checked = false;
+  if (box) { box.style.background = 'transparent'; box.style.borderColor = ''; }
+  if (chk) chk.classList.add('hidden');
+
+  document.getElementById('schedule-picker').classList.remove('hidden');
+  document.getElementById('schedule-picker').style.display = 'flex';
+}
+
+function toggleRepeatSchedule() {
+  const cb  = document.getElementById('repeat-toggle-cb');
+  const box = document.getElementById('repeat-toggle-box');
+  const chk = document.getElementById('repeat-toggle-check');
+  cb.checked = !cb.checked;
+  if (cb.checked) {
+    box.style.background = '#1a5252'; box.style.borderColor = '#1a5252';
+    chk.classList.remove('hidden');
+  } else {
+    box.style.background = 'transparent'; box.style.borderColor = '';
+    chk.classList.add('hidden');
+  }
+}
+
+function closeSchedulePicker() {
+  document.getElementById('schedule-picker').classList.add('hidden');
+  document.getElementById('schedule-picker').style.display = '';
+  schedulePickerTarget = null;
+}
+
+function setScheduleStatus(status) {
+  if (!schedulePickerTarget) return;
+  const { date, staffId } = schedulePickerTarget;
+  const repeat = document.getElementById('repeat-toggle-cb')?.checked || false;
+  const d = new Date(date + 'T12:00:00');
+  const dayOfWeek = d.getDay(); // 0=Sun..6=Sat
+
+  if (repeat && status !== null) {
+    // Store a weekly repeat rule per staff per day-of-week
+    // repeatRules: { staffId: { dayOfWeek: status } }
+    if (!scheduleData._repeats) scheduleData._repeats = {};
+    if (!scheduleData._repeats[staffId]) scheduleData._repeats[staffId] = {};
+    scheduleData._repeats[staffId][dayOfWeek] = status;
+  } else if (repeat && status === null) {
+    // Clear repeat rule
+    if (scheduleData._repeats?.[staffId]?.[dayOfWeek]) {
+      delete scheduleData._repeats[staffId][dayOfWeek];
+    }
+  }
+
+  // Also set the specific date
+  if (!scheduleData[date]) scheduleData[date] = {};
+  if (status === null) {
+    delete scheduleData[date][staffId];
+    if (Object.keys(scheduleData[date]).length === 0) delete scheduleData[date];
+  } else {
+    scheduleData[date][staffId] = status;
+  }
+
+  saveScheduleData();
+  closeSchedulePicker();
+  renderSchedule();
+}
+
+function getScheduleStatus(date, staffId) {
+  // Check specific date first, then fall back to repeat rule
+  if (scheduleData[date]?.[staffId]) return scheduleData[date][staffId];
+  const d = new Date(date + 'T12:00:00');
+  const dayOfWeek = d.getDay();
+  return scheduleData._repeats?.[staffId]?.[dayOfWeek] || null;
+}
+
+
+// ── Per-Service Status Helpers ────────────────────
+// assignment.status: 'waiting' | 'inservice' | 'done' (defaults to entry.status if not set)
+function getAssignmentStatus(entry, assignment) {
+  // NEVER fall back to entry.status — each service is independent
+  // Unset = waiting always
+  return assignment.status || 'waiting';
+}
+
+// Derive entry-level status from its assignments
+// If any service is inservice → entry is inservice
+// If ALL services are done → entry is done
+// Otherwise → waiting
+function deriveEntryStatus(entry) {
+  if (!entry.assignments || entry.assignments.length === 0) return entry.status || 'waiting';
+  const statuses = entry.assignments.map(a => getAssignmentStatus(entry, a));
+  if (statuses.some(s => s === 'inservice')) return 'inservice';
+  if (statuses.every(s => s === 'done'))     return 'done';
+  return 'waiting';
+}
+
+// Set a single assignment's status and sync entry status
+function setAssignmentStatus(entry, serviceId, newStatus) {
+  if (!entry.assignments) entry.assignments = [];
+  const a = entry.assignments.find(x => x.serviceId === serviceId);
+  if (a) a.status = newStatus;
+  // Sync the entry-level status
+  entry.status = deriveEntryStatus(entry);
+  if (entry.status === 'done') saveRecord(entry);
+  updateSheetsRow(entry);
+  renderQueue();
+  updateStats();
+  renderTurns();
+}
+
+// ── Turns Tab ─────────────────────────────────────
+let turnsAssignTarget = null;
+let turnsViewingHistory = null;
+let turnsTechOrder = JSON.parse(localStorage.getItem('muse_turns_order') || '[]');
+let turnsHistory   = JSON.parse(localStorage.getItem('muse_turns_history') || '{}');
+
+function saveTurnsHistory() { localStorage.setItem('muse_turns_history', JSON.stringify(turnsHistory)); }
+function getActiveTurnsOrder() {
+  // Return stored IDs as-is; renderTurnsTechGrid handles missing staff with a null check
+  return turnsTechOrder.filter(id => id && typeof id === 'string');
+}
+
+function archiveTurnsForToday() {
+  const today = new Date().toISOString().slice(0,10);
+  turnsHistory[today] = {
+    order: [...turnsTechOrder],
+    snapshot: queue.map(e => ({
+      id: String(e.id), name: e.name, phone: e.phone||'',
+      services: e.services, assignments: e.assignments||[],
+      totalCost: e.totalCost||0, status: e.status,
+      checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+    }))
+  };
+  const keys = Object.keys(turnsHistory).sort().slice(-90);
+  const pruned = {};
+  keys.forEach(k => pruned[k] = turnsHistory[k]);
+  turnsHistory = pruned;
+  saveTurnsHistory();
+  // Reset tech order — empty array, save immediately
+  turnsTechOrder = [];
+  localStorage.setItem('muse_turns_order', JSON.stringify([]));
+}
+
+// Staff break status for turns tab (separate from schedule)
+let turnsBreakStaff = JSON.parse(localStorage.getItem('muse_turns_break') || '[]');
+function saveTurnsBreak() { localStorage.setItem('muse_turns_break', JSON.stringify(turnsBreakStaff)); }
+
+function cycleTechStatus(event, staffId) {
+  event.stopPropagation();
+  const isBreak = turnsBreakStaff.includes(staffId);
+  if (isBreak) {
+    turnsBreakStaff = turnsBreakStaff.filter(id => id !== staffId);
+  } else {
+    turnsBreakStaff.push(staffId);
+  }
+  saveTurnsBreak();
+  renderTurnsTechGrid();
+  const el = document.getElementById('turns-break-count');
+  if (el) el.textContent = turnsBreakStaff.length;
+}
+
+function getTechStatusColor(staffId) {
+  // Break takes priority — set from turns tab
+  if (turnsBreakStaff.includes(staffId)) return { bg: '#f5c870', text: '#3a2800', label: 'On Break' };
+  const activeEntries = getActiveTechEntries(staffId);
+  if (activeEntries.length > 0) return { bg: '#fa746f', text: '#fff', label: 'In Service' };
+  return { bg: '#2a7a4f', text: '#fff', label: 'Available' };
+}
+
+function getActiveTechEntries(staffId) {
+  return queue.filter(e => e.status === 'inservice' && (e.assignments||[]).some(a => a.techId === staffId));
+}
+
+// All assignments for a tech today — one entry per service assignment, ordered by ASSIGNMENT time (not checkin)
+function getTechAllAssignments(techId) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const result = [];
+  queue.forEach(e => {
+    const d = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
+    if (d < today) return;
+    (e.assignments||[]).forEach(a => {
+      if (a.techId !== techId) return;
+      result.push({ entry: e, assignment: a });
+    });
+  });
+  // Sort by assignedAt timestamp (set when assignment is saved), falling back to checkinTime
+  result.sort((a, b) => {
+    const ta = a.assignment.assignedAt || (a.entry.checkinTime instanceof Date ? a.entry.checkinTime.getTime() : new Date(a.entry.checkinTime).getTime());
+    const tb = b.assignment.assignedAt || (b.entry.checkinTime instanceof Date ? b.entry.checkinTime.getTime() : new Date(b.entry.checkinTime).getTime());
+    return ta - tb;
+  });
+  return result;
+}
+
+function getTechTurns(techId) {
+  const assignments = getTechAllAssignments(techId);
+  let full = 0, half = 0, bonus = 0;
+  assignments.forEach(({ assignment: a }) => {
+    const cost = a.cost || 0;
+    if (cost >= 28)      full++;
+    else if (cost >= 12) half += 0.5;
+    else if (cost > 0)   bonus++;
+  });
+  return { full, half, bonus, total: full + half };
+}
+
+
+function loadTurnsHistory(dateStr) {
+  const today = new Date().toISOString().slice(0,10);
+  if (!dateStr || dateStr === today) { clearTurnsHistory(); return; }
+  turnsViewingHistory = dateStr;
+  document.getElementById('turns-today-btn')?.classList.remove('hidden');
+  document.getElementById('turns-date-label').textContent =
+    new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  renderTurnsTechGrid();
+  renderTurnsQueue();
+}
+
+function clearTurnsHistory() {
+  turnsViewingHistory = null;
+  const today = new Date().toISOString().slice(0,10);
+  const dateInput = document.getElementById('turns-history-date');
+  if (dateInput) dateInput.value = today;
+  document.getElementById('turns-today-btn')?.classList.add('hidden');
+  document.getElementById('turns-date-label').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  renderTurns();
+}
+
+function renderTurnsHistoryView() {
+  const grid = document.getElementById('turns-tech-grid');
+  const hist = turnsHistory[turnsViewingHistory];
+  if (!hist) {
+    grid.innerHTML = '<div class="text-sm font-body text-on-surface-variant py-8 text-center">No turns data for this date.</div>';
+    return;
+  }
+  const order = hist.order || [];
+  const snap  = hist.snapshot || [];
+  grid.innerHTML = `
+    <div class="bg-secondary-container/30 rounded-xl px-4 py-2 mb-3 text-sm font-body text-on-surface-variant flex items-center gap-2">
+      <span class="material-symbols-outlined" style="font-size:16px">history</span> Viewing history — read only
+    </div>
+    ${order.map(staffId => {
+      const st = STAFF.find(s=>s.id===staffId);
+      if (!st) return '';
+      const staffEntries = snap.filter(e=>(e.assignments||[]).some(a=>a.techId===staffId));
+      return `
+        <div class="flex items-center border-b border-surface-container-high py-3 gap-3 opacity-80">
+          <div class="w-40 flex-shrink-0 font-headline font-semibold text-on-surface text-sm">${st.name}</div>
+          <div class="flex gap-2 flex-wrap">
+            ${staffEntries.map(e=>{
+              const a=(e.assignments||[]).find(x=>x.techId===staffId);
+              return `<div class="px-3 py-2 bg-surface-container rounded-lg text-xs font-body"><div class="font-semibold">${e.name.split(' ')[0]}</div><div class="text-on-surface-variant">${SERVICES.find(s=>s.id===a?.serviceId)?.label||''} ${a?.cost?'$'+a.cost:''}</div></div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+// Tech selector modal
+function showTurnsTechSelector() {
+  const list = document.getElementById('turns-tech-selector-list');
+  const currentOrder = getActiveTurnsOrder();
+  const remaining = STAFF.filter(s => !currentOrder.includes(s.id));
+  const allForDisplay = [...currentOrder.map(id=>STAFF.find(s=>s.id===id)).filter(Boolean), ...remaining];
+
+  list.innerHTML = allForDisplay.map(st => {
+    const inOrder = currentOrder.includes(st.id);
+    const orderIdx = currentOrder.indexOf(st.id);
+    const photo = st.photo
+      ? `<img src="${st.photo}" class="w-9 h-9 rounded-full object-cover flex-shrink-0">`
+      : `<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0"><span class="text-xs font-headline font-bold text-on-surface">${st.name.charAt(0)}</span></div>`;
+    return `
+      <div class="flex items-center gap-3 p-3 rounded-xl mb-1 cursor-pointer select-none tech-order-item
+        ${inOrder ? 'bg-primary/10 border border-primary/30' : 'bg-surface-container border border-transparent'}"
+        data-staff-id="${st.id}" data-in-order="${inOrder}" onclick="toggleTurnsTechOrder('${st.id}')">
+        <span class="material-symbols-outlined text-outline-variant cursor-grab tech-drag-handle" style="font-size:20px" onpointerdown="startTechReorder(event)">drag_indicator</span>
+        ${photo}
+        <div class="flex-grow">
+          <div class="font-headline font-semibold text-on-surface text-sm">${st.name}</div>
+          ${inOrder ? `<div class="text-[11px] font-body text-primary">Turn order: #${orderIdx+1}</div>` : '<div class="text-[11px] font-body text-on-surface-variant">Not in today\'s rotation</div>'}
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${inOrder ? 'bg-primary border-primary' : 'border-outline-variant'}">
+          ${inOrder ? '<span class="material-symbols-outlined text-on-primary" style="font-size:14px;font-variation-settings:\'FILL\' 1">check</span>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('turns-tech-modal').classList.remove('hidden');
+  document.getElementById('turns-tech-modal').style.display = 'flex';
+}
+
+// Drag-to-reorder in the tech selector
+let _reorderDragging = null;
+let _reorderClone = null;
+let _reorderList = null;
+
+function startTechReorder(e) {
+  e.stopPropagation(); // prevent the onclick toggle from firing
+  const item = e.currentTarget.closest('.tech-order-item');
+  if (!item) return;
+
+  _reorderDragging = item;
+  _reorderList = item.parentNode;
+  const rect = item.getBoundingClientRect();
+
+  _reorderClone = item.cloneNode(true);
+  _reorderClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.85;pointer-events:none;z-index:9999;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.2);`;
+  document.body.appendChild(_reorderClone);
+  item.style.opacity = '0.3';
+
+  document.addEventListener('pointermove', onTechReorderMove);
+  document.addEventListener('pointerup', onTechReorderEnd, { once: true });
+  e.preventDefault();
+}
+
+function onTechReorderMove(e) {
+  if (!_reorderClone) return;
+  _reorderClone.style.top = (e.clientY - 25) + 'px';
+
+  // Find which item we're hovering over
+  const items = [..._reorderList.querySelectorAll('.tech-order-item')];
+  items.forEach(item => item.style.borderTop = '');
+  const hovered = items.find(item => {
+    if (item === _reorderDragging) return false;
+    const r = item.getBoundingClientRect();
+    return e.clientY >= r.top && e.clientY <= r.bottom;
+  });
+  if (hovered) hovered.style.borderTop = '2px solid #1a5252';
+}
+
+function onTechReorderEnd(e) {
+  document.removeEventListener('pointermove', onTechReorderMove);
+  if (_reorderClone) { _reorderClone.remove(); _reorderClone = null; }
+  if (!_reorderDragging) return;
+
+  _reorderDragging.style.opacity = '';
+  const items = [..._reorderList.querySelectorAll('.tech-order-item')];
+  items.forEach(item => item.style.borderTop = '');
+
+  // Find insertion point
+  const hovered = items.find(item => {
+    if (item === _reorderDragging) return false;
+    const r = item.getBoundingClientRect();
+    return e.clientY >= r.top && e.clientY <= r.bottom;
+  });
+
+  if (hovered && hovered !== _reorderDragging) {
+    _reorderList.insertBefore(_reorderDragging, hovered);
+    // Rebuild turnsTechOrder from DOM order — only include those in order
+    turnsTechOrder = [..._reorderList.querySelectorAll('.tech-order-item[data-in-order="true"]')]
+      .map(el => el.dataset.staffId);
+    // Re-render to update order numbers
+    showTurnsTechSelector();
+  }
+
+  _reorderDragging = null;
+  _reorderList = null;
+}
+
+function checkAllTechs() {
+  turnsTechOrder = STAFF.map(s => s.id);
+  localStorage.setItem('muse_turns_order', JSON.stringify(turnsTechOrder));
+  showTurnsTechSelector();
+}
+
+function uncheckAllTechs() {
+  turnsTechOrder = [];
+  localStorage.setItem('muse_turns_order', JSON.stringify(turnsTechOrder));
+  showTurnsTechSelector();
+}
+
+function toggleTurnsTechOrder(staffId) {
+  if (turnsTechOrder.includes(staffId)) {
+    turnsTechOrder = turnsTechOrder.filter(id => id !== staffId);
+  } else {
+    turnsTechOrder.push(staffId);
+  }
+  localStorage.setItem('muse_turns_order', JSON.stringify(turnsTechOrder));
+  showTurnsTechSelector(); // re-render picker with updated state
+}
+
+function saveTurnsTechOrder() {
+  // Save to localStorage first
+  localStorage.setItem('muse_turns_order', JSON.stringify(turnsTechOrder));
+  // Re-read to confirm
+  turnsTechOrder = JSON.parse(localStorage.getItem('muse_turns_order') || '[]');
+  closeTurnsTechModal();
+  renderTurns();
+  showToast(turnsTechOrder.length + ' technician' + (turnsTechOrder.length !== 1 ? 's' : '') + ' in today\'s rotation');
+}
+
+function saveTurnsTechOrderToStorage() {
+  localStorage.setItem('muse_turns_order', JSON.stringify(turnsTechOrder));
+}
+
+function closeTurnsTechModal() {
+  document.getElementById('turns-tech-modal').classList.add('hidden');
+  document.getElementById('turns-tech-modal').style.display = '';
+}
+
+
+
+
+
+
+
+
+
+function renderTurns() {
+  renderTurnsTechGrid();
+  renderTurnsQueue();
+}
+
+function renderTurnsTechGrid() {
+  const grid = document.getElementById('turns-tech-grid');
+  if (!grid) return;
+  if (turnsViewingHistory) { renderTurnsHistoryView(); return; }
+
+  turnsTechOrder = JSON.parse(localStorage.getItem('muse_turns_order') || '[]');
+
+  const todayLabel = document.getElementById('turns-date-label');
+  if (todayLabel) todayLabel.textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const bc = document.getElementById('turns-break-count');
+  if (bc) bc.textContent = turnsBreakStaff.length;
+
+  const order = getActiveTurnsOrder();
+  let activeCount = 0;
+
+  if (order.length === 0) {
+    grid.innerHTML = '<div class="text-sm font-body text-on-surface-variant py-12 text-center opacity-60"><span class="material-symbols-outlined text-4xl block mb-3">swap_vert</span>No technicians added today.<br>Click <strong>Technicians</strong> to set up the turn order.</div>';
+    const el = document.getElementById('turns-active-count'); if (el) el.textContent = '0';
+    return;
+  }
+
+  const rows = order.map(staffId => {
+    const st = STAFF.find(s => s.id === staffId);
+    if (!st) {
+      return '<div class="flex items-center border-b border-surface-container-high py-2 px-3 gap-2 opacity-50"><div class="w-[165px] flex-shrink-0 text-xs font-body text-outline italic">Staff not found (' + staffId.slice(0,12) + '...)</div></div>';
+    }
+
+    const turns = getTechTurns(staffId);
+    const allAssign = getTechAllAssignments(staffId);
+    if (allAssign.some(a => getAssignmentStatus(a.entry, a.assignment) === 'inservice')) activeCount++;
+    const statusColor = getTechStatusColor(staffId);
+
+    const photo = st.photo
+      ? '<img src="' + st.photo + '" class="w-11 h-11 rounded-full object-cover border-2 flex-shrink-0" style="border-color:' + statusColor.bg + '">'
+      : '<div class="w-11 h-11 rounded-full flex items-center justify-center border-2 flex-shrink-0 text-sm font-headline font-bold" style="background:' + statusColor.bg + '20;border-color:' + statusColor.bg + ';color:' + statusColor.bg + '">' + st.name.charAt(0).toUpperCase() + '</div>';
+
+    const techCol = '<div class="flex items-center gap-2 w-[165px] flex-shrink-0 pr-2">' +
+      '<button onclick="showTechStatusMenu(event,\'' + staffId + '\')" class="focus:outline-none flex-shrink-0">' + photo + '</button>' +
+      '<div class="min-w-0">' +
+      '<div class="font-headline font-semibold text-on-surface text-sm truncate">' + st.name + '</div>' +
+      '<div class="mt-0.5"><span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style="background:' + statusColor.bg + ';color:' + statusColor.text + '">' + statusColor.label + '</span></div>' +
+      '<div class="text-[11px] font-body flex gap-1 mt-0.5"><span class="text-primary font-semibold">' + turns.total + 't</span>' +
+      (turns.bonus > 0 ? '<span class="text-secondary">+' + turns.bonus + 'b</span>' : '') +
+      '</div></div></div>';
+
+    // Always: filled slots + 1 empty, minimum 5 total
+    const MIN_SLOTS = 5;
+    const totalSlots = Math.max(MIN_SLOTS, allAssign.length + 1);
+    let turnCounter = 0;
+
+    const slotHtml = Array.from({length: totalSlots}, (_, slotIdx) => {
+      const item = allAssign[slotIdx]; // undefined for empty slots
+
+      if (item) {
+        const { entry: e, assignment: a } = item;
+        const cost = a.cost || 0;
+        const isFull  = cost >= 28;
+        const isHalf  = cost >= 12 && cost < 28;
+        const isBonus = cost > 0 && cost < 12;
+        if (isFull)       turnCounter += 1;
+        else if (isHalf)  turnCounter += 0.5;
+        const turnLabelNum = Number.isInteger(turnCounter) ? turnCounter : turnCounter.toFixed(1);
+        const turnLabel = isBonus ? 'Bonus' : (cost === 0 ? 'Turn ?' : 'Turn ' + turnLabelNum);
+
+        const svcStatus = getAssignmentStatus(e, a);
+        let bg, fg;
+        if (svcStatus === 'done')      { bg = '#dde2e5'; fg = '#555'; }
+        else if (svcStatus === 'inservice') { bg = '#c8e6c5'; fg = '#1b5e20'; }
+        else                           { bg = '#ffe0b2'; fg = '#6d3200'; }
+
+        const outlineStyle = e.groupId ? ';outline:3px solid ' + (e.groupColor || '#e8a230') + ';outline-offset:-1px' : '';
+        const svc     = SERVICES.find(s => s.id === a.serviceId);
+        const svcLabel = svc ? svc.label : (e.services.map(sid => { const sv = SERVICES.find(s => s.id === sid); return sv ? sv.label : '?'; }).join(', '));
+        const station  = a.station || '';
+        const costStr  = a.cost ? '$' + Number(a.cost).toFixed(0) : '';
+        const t        = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
+        const timeStr  = t.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        const groupDot = e.groupId ? '<span class="inline-block w-1.5 h-1.5 rounded-full mr-0.5 flex-shrink-0" style="background:' + (e.groupColor || '#888') + '"></span>' : '';
+
+        return '<div class="flex-shrink-0 w-[155px] px-1 turns-filled-slot" data-entry-id="' + e.id + '" data-tech-id="' + staffId + '" data-slot="' + slotIdx + '">' +
+          '<div class="text-[9px] font-headline font-bold text-center mb-0.5 select-none text-on-surface-variant">' + turnLabel + '</div>' +
+          '<button onclick="showGroupAssignModal(\'' + e.id + '\')" class="w-full rounded-xl px-2.5 py-1.5 text-left active:scale-95 transition-all text-xs font-body" style="background:' + bg + ';color:' + fg + ';min-height:78px' + outlineStyle + '">' +
+          '<div class="flex items-center gap-0.5 mb-0.5">' + groupDot + '<span class="font-semibold text-[11px] truncate">' + e.name + '</span></div>' +
+          '<div class="text-[10px] opacity-90 leading-tight">' + svcLabel + (station ? ' · ' + station : '') + (costStr ? ' · ' + costStr : '') + '</div>' +
+          '<div class="text-[9px] opacity-60 mt-0.5">' + timeStr + (e.phone ? ' · ' + e.phone : '') + '</div>' +
+          '</button></div>';
+
+      } else {
+        // Empty slot — no label, just the + button
+        return '<div class="flex-shrink-0 w-[155px] px-1 turns-drop-zone" data-tech-id="' + staffId + '" data-slot="' + slotIdx + '">' +
+          '<div class="text-[9px] mb-0.5 opacity-0 select-none">-</div>' +
+          '<div class="turns-empty-slot w-full rounded-xl border-2 border-dashed border-outline-variant/40 flex items-center justify-center text-outline-variant cursor-pointer hover:border-primary hover:bg-primary/5 hover:text-primary transition-all" style="min-height:78px" onclick="openTurnsAssign(\'' + staffId + '\',' + slotIdx + ')">' +
+          '<span class="material-symbols-outlined" style="font-size:22px">add</span></div></div>';
+      }
+    }).join('');
+
+    // Slot container — horizontal scroll, wheel handled via JS (not inline to avoid passive event issue)
+    return '<div class="flex items-center border-b border-surface-container-high py-3 gap-2">' +
+      techCol +
+      '<div class="turns-slot-row flex gap-2 overflow-x-auto pb-1" style="min-width:0;flex:1;scrollbar-width:thin">' +
+      slotHtml + '</div></div>';
+  }).filter(Boolean).join('');
+
+  grid.innerHTML = rows || '<div class="text-sm font-body text-on-surface-variant py-4 text-center">No active technicians.</div>';
+  const el = document.getElementById('turns-active-count'); if (el) el.textContent = activeCount;
+
+  // Attach wheel scroll to slot rows (passive-safe: only scroll left, don't prevent default when at limits)
+  grid.querySelectorAll('.turns-slot-row').forEach(row => {
+    row.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        // Only hijack vertical scroll if the row actually has overflow
+        if (row.scrollWidth > row.clientWidth) {
+          row.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }
+    }, { passive: false });
+  });
+
+  setupTurnsDragDrop();
+}
+
+function renderTurnsQueue() {
+  const waitingList = document.getElementById('turns-waiting-list');
+  const activeList  = document.getElementById('turns-active-list');
+  if (!waitingList || !activeList) return;
+
+  // Waiting: entries where at least one service is still waiting
+  // Active: entries where at least one service is inservice
+  const waiting   = queue.filter(e => {
+    if (e.status === 'done') return false;
+    if (!e.assignments || e.assignments.length === 0) return e.status === 'waiting';
+    return e.assignments.some(a => getAssignmentStatus(e, a) === 'waiting');
+  });
+  const inservice = queue.filter(e => {
+    if (!e.assignments || e.assignments.length === 0) return e.status === 'inservice';
+    return e.assignments.some(a => getAssignmentStatus(e, a) === 'inservice');
+  });
+  const wLabel = document.getElementById('turns-waiting-label');
+  const aLabel = document.getElementById('turns-active-label');
+  if (wLabel) wLabel.textContent = waiting.length + ' in queue';
+  if (aLabel) aLabel.textContent = inservice.length + ' in service';
+
+  function buildCard(e, draggable) {
+    const t = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
+    const timeStr = t.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const groupDot = e.groupId ? '<span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:' + (e.groupColor||'') + '"></span>' : '';
+    const groupLbl = e.groupLabel ? '<div class="text-[10px] font-body italic" style="color:' + (e.groupColor||'#888') + '">' + e.groupLabel + '</div>' : '';
+    const avatar = e.groupId
+      ? '<div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-headline font-bold" style="background:' + e.groupColor + '20;color:' + e.groupColor + ';border:2px solid ' + e.groupColor + '">' + e.name.charAt(0).toUpperCase() + '</div>'
+      : '<div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0"><span class="text-sm font-headline font-bold text-primary">' + e.name.charAt(0).toUpperCase() + '</span></div>';
+
+    // Assignment info — show for both waiting and inservice
+    // If assigned: show "Service → Tech @ Station · $Cost" (no duplicate badge)
+    // If no assignment: show service badges
+    const assignments = (e.assignments||[]).filter(a => a.techId || a.serviceId);
+    let serviceContent;
+    if (assignments.length > 0) {
+      serviceContent = assignments.map(a => {
+        const tech = STAFF.find(s=>s.id===a.techId);
+        const svc  = SERVICES.find(s=>s.id===a.serviceId);
+        const parts = [];
+        if (svc)       parts.push(svc.label);
+        if (tech)      parts.push('→ ' + tech.name);
+        if (a.station) parts.push('@ ' + a.station);
+        if (a.cost)    parts.push('$' + a.cost);
+        return '<div class="text-[10px] text-on-surface-variant mt-0.5">' + parts.join(' ') + '</div>';
+      }).join('');
+    } else {
+      // No assignment yet — show plain service badges
+      serviceContent = '<div class="flex gap-1 mt-0.5 flex-wrap">' +
+        e.services.map(sid => {
+          const s = SERVICES.find(x=>x.id===sid);
+          return '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container font-body">' + (s?s.label:sid) + '</span>';
+        }).join('') + '</div>';
+    }
+
+    // Clear visual distinction: waiting = amber left + warm bg, active = green left + cool bg
+    const borderColor = e.status === 'inservice' ? '#2a7a4f' : '#d4860a';
+    const bgTint = e.status === 'inservice' ? 'rgba(200,230,197,0.25)' : 'rgba(255,224,178,0.25)';
+    return '<div class="px-4 py-3 ' + (draggable?'cursor-grab ':'cursor-pointer ') + 'hover:brightness-95 transition-all select-none border-b border-surface-container-high border-l-4" style="border-left-color:' + borderColor + ';background:' + bgTint + '" data-entry-id="' + e.id + '" onclick="showGroupAssignModal(\'' + e.id + '\')">' +
+      '<div class="flex items-start gap-2 pointer-events-none">' + avatar +
+      '<div class="min-w-0 flex-grow">' +
+      '<div class="flex items-center gap-1.5 flex-wrap">' + groupDot + '<span class="font-headline font-semibold text-on-surface text-sm">' + e.name + '</span>' +
+      '<span class="text-[11px] font-body text-on-surface-variant">' + timeStr + '</span></div>' +
+      groupLbl + serviceContent +
+      (e.phone ? '<div class="text-[10px] font-body text-outline mt-0.5">' + e.phone + '</div>' : '') +
+      '</div></div></div>';
+  }
+
+  waitingList.innerHTML = waiting.length === 0
+    ? '<div class="px-4 py-3 text-xs font-body text-on-surface-variant text-center">No one waiting</div>'
+    : waiting.map(e => buildCard(e, true)).join('');
+
+  activeList.innerHTML = inservice.length === 0
+    ? '<div class="px-4 py-3 text-xs font-body text-on-surface-variant text-center">No one in service</div>'
+    : inservice.map(e => buildCard(e, true)).join('');
+
+  setupTurnsDragDrop();
+}
+
+let _dragEntryId = null;
+let _dragClone = null;
+let _dragSourceTechId = null;
+
+function setupTurnsDragDrop() {
+  // Attach drag to both waiting and active cards
+  document.querySelectorAll('#turns-waiting-list [data-entry-id], #turns-active-list [data-entry-id]').forEach(card => {
+    const newCard = card.cloneNode(true);
+    card.parentNode && card.parentNode.replaceChild(newCard, card);
+    newCard.addEventListener('pointerdown', startTurnsDrag);
+    // click is handled inline via onclick on the card div
+  });
+}
+
+function startTurnsDrag(e) {
+  if (e.button !== undefined && e.button !== 0) return;
+  const card = e.currentTarget;
+  _dragEntryId = card.dataset.entryId;
+  _dragSourceTechId = card.dataset.techId || null;
+  const rect = card.getBoundingClientRect();
+  _dragClone = card.cloneNode(true);
+  _dragClone.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;opacity:0.9;pointer-events:none;z-index:9999;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);background:white;';
+  document.body.appendChild(_dragClone);
+  card.style.opacity = '0.3';
+  document.addEventListener('pointermove', onTurnsDragMove);
+  document.addEventListener('pointerup', onTurnsDragEnd, {once:true});
+  e.preventDefault();
+}
+
+function onTurnsDragMove(e) {
+  if (!_dragClone) return;
+  const w = parseInt(_dragClone.style.width);
+  _dragClone.style.left = (e.clientX - w/2) + 'px';
+  _dragClone.style.top  = (e.clientY - 30)  + 'px';
+  document.querySelectorAll('.turns-empty-slot').forEach(slot => {
+    const r = slot.getBoundingClientRect();
+    const over = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
+    slot.style.borderColor = over ? '#1a5252' : '';
+    slot.style.background  = over ? 'rgba(26,82,82,0.08)' : '';
+    slot.style.color       = over ? '#1a5252' : '';
+  });
+}
+
+function onTurnsDragEnd(e) {
+  document.removeEventListener('pointermove', onTurnsDragMove);
+  if (_dragClone) { _dragClone.remove(); _dragClone = null; }
+  document.querySelectorAll('#turns-waiting-list [data-entry-id], #turns-active-list [data-entry-id], .turns-filled-slot').forEach(c => c.style.opacity = '');
+  document.querySelectorAll('.turns-empty-slot').forEach(s => { s.style.borderColor=''; s.style.background=''; s.style.color=''; });
+  if (!_dragEntryId) return;
+
+  let targetTechId = null;
+  document.querySelectorAll('.turns-drop-zone').forEach(zone => {
+    const r = zone.getBoundingClientRect();
+    if (e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom) targetTechId = zone.dataset.techId;
+  });
+
+  const capturedId = _dragEntryId;
+  const sourceTechId = _dragSourceTechId;
+  _dragEntryId = null;
+  _dragSourceTechId = null;
+
+  if (!targetTechId) return;
+
+  // Moving between techs (dragging a filled slot)
+  if (sourceTechId && sourceTechId !== targetTechId) {
+    const entry = queue.find(x => String(x.id) === String(capturedId));
+    if (entry && entry.assignments) {
+      pushUndo('Move ' + (entry.name||'customer') + ' between techs');
+      entry.assignments.forEach(a => { if (a.techId === sourceTechId) a.techId = targetTechId; });
+      updateSheetsRow(entry);
+      renderQueue(); renderTurns();
+      showToast('Moved to ' + (STAFF.find(s=>s.id===targetTechId)?.name||'tech'));
+      return;
+    }
+  }
+
+  // From waiting/active — open assign modal on correct tab
+  turnsAssignTarget = { techId: targetTechId };
+  showGroupAssignModal(capturedId);
+  setTimeout(() => {
+    const tabIdx = groupAssignEntries.indexOf(String(capturedId));
+    if (tabIdx > 0) switchGroupTab(tabIdx);
+    setTimeout(() => {
+      document.querySelectorAll('#group-assign-content .assign-tech').forEach(sel => { if (!sel.value) sel.value = targetTechId; });
+      updateGroupTotal();
+    }, 60);
+  }, 200);
+}
+
+function openTurnsAssign(techId, slotIndex) {
+  turnsAssignTarget = { techId, slotIndex };
+  const tech = STAFF.find(s => s.id === techId);
+  document.getElementById('turns-assign-label').textContent = `Assign to ${tech?.name || ''}`;
+
+  // Build list of { entry, serviceId, svcLabel } for every waiting service
+  // that is not already assigned to this tech
+  const options = [];
+  queue.forEach(e => {
+    if (e.status === 'done') return;
+    e.services.forEach(sid => {
+      const a = (e.assignments || []).find(x => x.serviceId === sid);
+      const svcStatus = a ? getAssignmentStatus(e, a) : 'waiting';
+      // Show if waiting AND not already assigned to this exact tech for this service
+      if (svcStatus !== 'waiting') return;
+      if (a && a.techId === techId) return; // already with this tech
+      const svc = SERVICES.find(s => s.id === sid);
+      options.push({ entry: e, serviceId: sid, svcLabel: svc ? svc.label : sid });
+    });
+  });
+
+  const list = document.getElementById('turns-assign-list');
+  if (options.length === 0) {
+    list.innerHTML = '<div class="text-sm font-body text-on-surface-variant text-center py-4">No waiting services to assign</div>';
+  } else {
+    // Group by customer name for readability
+    const byCustomer = {};
+    options.forEach(o => {
+      const key = String(o.entry.id);
+      if (!byCustomer[key]) byCustomer[key] = { entry: o.entry, svcs: [] };
+      byCustomer[key].svcs.push({ serviceId: o.serviceId, svcLabel: o.svcLabel });
+    });
+
+    list.innerHTML = Object.values(byCustomer).map(({ entry: e, svcs }) => {
+      const t = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
+      const timeStr = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const svcButtons = svcs.map(({ serviceId, svcLabel }) => `
+        <button onclick="assignServiceFromTurns('${e.id}','${serviceId}')"
+          class="w-full flex items-center gap-3 px-4 py-2 hover:bg-surface-container transition-colors text-left border-t border-surface-container-high">
+          <div class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></div>
+          <div class="min-w-0">
+            <span class="text-sm font-body font-semibold text-on-surface">${svcLabel}</span>
+          </div>
+        </button>`).join('');
+      return `
+        <div class="border border-surface-container-high rounded-xl mb-2 overflow-hidden">
+          <div class="px-4 py-2 bg-surface-container flex items-center justify-between">
+            <span class="font-headline font-semibold text-on-surface text-sm">${e.name}</span>
+            <span class="text-[11px] font-body text-on-surface-variant">${timeStr}</span>
+          </div>
+          ${svcButtons}
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('turns-assign-modal').classList.remove('hidden');
+  document.getElementById('turns-assign-modal').style.display = 'flex';
+}
+
+function assignServiceFromTurns(entryId, serviceId) {
+  const techId = turnsAssignTarget?.techId;
+  closeTurnsAssignModal();
+  showGroupAssignModal(entryId);
+
+  setTimeout(() => {
+    const tabIdx = groupAssignEntries.indexOf(String(entryId));
+    if (tabIdx > 0) switchGroupTab(tabIdx);
+
+    setTimeout(() => {
+      // Find the service row for this specific service and set ONLY that tech dropdown
+      const rows = document.querySelectorAll('#group-assign-content [data-service-id]');
+      rows.forEach(row => {
+        if (row.dataset.serviceId === serviceId) {
+          // Pre-select the tech that owns this slot
+          const techSelect = row.querySelector('.assign-tech');
+          if (techSelect && techId) techSelect.value = techId;
+          // Highlight and scroll to the row
+          row.style.outline = '2px solid #1a5252';
+          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          setTimeout(() => { row.style.outline = ''; }, 1500);
+          updateGroupTotal();
+        }
+      });
+    }, 100);
+  }, 200);
+}
+
+function closeTurnsAssignModal() {
+  document.getElementById('turns-assign-modal').classList.add('hidden');
+  document.getElementById('turns-assign-modal').style.display = '';
+}
+
+function assignFromTurns(entryId) {
+  closeTurnsAssignModal();
+  showGroupAssignModal(entryId);
+  setTimeout(() => {
+    const tabIdx = groupAssignEntries.indexOf(String(entryId));
+    if (tabIdx > 0) switchGroupTab(tabIdx);
+    // Do NOT prefill tech — user assigns manually
+  }, 200);
+}
+
+// ── Tech Status Menu ──────────────────────────────
+let _techStatusMenuId = null;
+
+function showTechStatusMenu(event, staffId) {
+  event.stopPropagation();
+  const menu2 = document.getElementById('tech-status-menu');
+  if (_techStatusMenuId === staffId && menu2 && !menu2.classList.contains('hidden')) { closeTechStatusMenu(); return; }
+  _techStatusMenuId = staffId;
+  const st = STAFF.find(s => s.id === staffId);
+  const menu = document.getElementById('tech-status-menu');
+  if (!menu || !st) return;
+  document.getElementById('tech-status-menu-name').textContent = st.name;
+  const isBreak = turnsBreakStaff.includes(staffId);
+  document.getElementById('tsm-available').style.opacity = isBreak ? '0.4' : '1';
+  document.getElementById('tsm-break').style.opacity    = isBreak ? '1'   : '0.4';
+  // Services from staff profile (which services this tech CAN perform)
+  const profileSvcs = (st.services && st.services.length > 0)
+    ? st.services.map(sid => { const svc = SERVICES.find(s=>s.id===sid); return svc ? svc.label : null; }).filter(Boolean)
+    : SERVICES.map(s => s.label); // if none set, show all
+  const svcList = document.getElementById('tech-status-menu-services');
+  svcList.innerHTML = profileSvcs.length > 0
+    ? profileSvcs.map(label => '<div>' + label + '</div>').join('')
+    : '<div class="italic text-outline">No services configured</div>';
+  const rect = event.currentTarget.getBoundingClientRect();
+  menu.style.left = Math.min(rect.left, window.innerWidth - 290) + 'px';
+  menu.style.top  = (rect.bottom + 8) + 'px';
+  menu.classList.remove('hidden');
+  setTimeout(() => document.addEventListener('click', closeTechStatusMenu, {once:true}), 10);
+}
+
+function closeTechStatusMenu() {
+  document.getElementById('tech-status-menu')?.classList.add('hidden');
+  _techStatusMenuId = null;
+}
+
+function setTechBreak(isBreak) {
+  if (!_techStatusMenuId) return;
+  const staffId = _techStatusMenuId;
+  if (isBreak && !turnsBreakStaff.includes(staffId)) turnsBreakStaff.push(staffId);
+  else if (!isBreak) turnsBreakStaff = turnsBreakStaff.filter(id => id !== staffId);
+  saveTurnsBreak();
+  closeTechStatusMenu();
+  renderTurnsTechGrid();
+}
+
+// ── Undo Stack ────────────────────────────────────
+const undoStack = [];
+
+function pushUndo(description) {
+  const snapshot = queue.map(e => ({
+    ...e,
+    checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+  }));
+  undoStack.push({ description, snapshot });
+  if (undoStack.length > 20) undoStack.shift();
+}
+
+function performUndo() {
+  if (!undoStack.length) { showToast('Nothing to undo'); return; }
+  const { description, snapshot } = undoStack.pop();
+  queue = snapshot.map(e => ({ ...e, checkinTime: new Date(e.checkinTime) }));
+  renderQueue(); updateStats(); renderTurns();
+  showToast('Undone: ' + description);
+}
+
+// ── Updated setupTurnsDragDrop — includes filled slots ──
+function setupTurnsDragDrop() {
+  const draggables = [
+    ...document.querySelectorAll('#turns-waiting-list [data-entry-id]'),
+    ...document.querySelectorAll('#turns-active-list [data-entry-id]'),
+    ...document.querySelectorAll('.turns-filled-slot'),
+  ];
+  draggables.forEach(card => {
+    const newCard = card.cloneNode(true);
+    card.parentNode && card.parentNode.replaceChild(newCard, card);
+    newCard.addEventListener('pointerdown', startTurnsDrag);
+  });
+}
+
+async function squarePullStaff() {
+  if (!squareConfig) { showToast('Square not configured.'); return; }
+  try {
+    const res = await fetch(`${SQUARE_PROXY}/v2/team-members?status=ACTIVE&limit=200`);
+    if (!res.ok) { showToast('Could not reach Square team members API.'); return; }
+    const data = await res.json();
+    const members = data.team_members || [];
+    let added = 0;
+    members.forEach(m => {
+      const name = [m.given_name, m.family_name].filter(Boolean).join(' ');
+      if (!name) return;
+      const id = `sq-staff-${m.id}`;
+      if (!STAFF.find(s => s.id === id || s.name.toLowerCase() === name.toLowerCase())) {
+        STAFF.push({ id, name, commission: null, squareTeamMemberId: m.id });
+        added++;
+      }
+    });
+    if (added > 0) { saveStaffToStorage(); renderStaffList(); showToast(`${added} staff imported from Square`); }
+    else showToast('Staff already up to date');
+  } catch(e) { console.warn('Square staff sync failed:', e); showToast('Could not sync staff from Square'); }
+}
+
+
 
 // ── Phone Formatting ─────────────────────────────
 function formatPhone(input) {
@@ -2948,7 +4459,7 @@ function renderAssignRows(entry) {
   servicesList.innerHTML = entryServices.map(sid => {
     const svc = SERVICES.find(s => s.id === sid) || { id: sid, label: sid };
     const assignment = (entry.assignments || []).find(a => a.serviceId === sid) || {};
-    const techOptions = STAFF.map(st =>
+    const techOptions = getActiveStaff().map(st =>
       `<option value="${st.id}" ${assignment.techId === st.id ? 'selected' : ''}>${st.name}</option>`
     ).join('');
     const stationOptions = stations.map(st =>
@@ -2974,10 +4485,12 @@ function renderAssignRows(entry) {
           </div>
           <div>
             <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Cost ($)</label>
-            <input type="number" min="0" step="0.01" placeholder="0.00"
-              value="${assignment.cost || ''}"
+            <input type="number" min="0" step="0.01"
+              placeholder="${svc.baseCost != null ? Number(svc.baseCost).toFixed(2) : '0.00'}"
+              value="${assignment.cost != null && assignment.cost !== 0 ? assignment.cost : ''}"
               class="assign-cost w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary"
               oninput="updateAssignTotal()">
+          </div>
           </div>
         </div>
       </div>
@@ -3036,20 +4549,18 @@ function saveAndAdvanceStatus() {
   const entry = queue.find(e => String(e.id) === String(assignEntryId));
   if (!entry) return;
   readAssignModalInputs(entry);
-
   const targetStatus = entry.status === 'inservice' ? 'done' : 'inservice';
-
   if (targetStatus === 'done' && !validateAssignments(entry)) {
     showToast('Please assign a tech and cost for every service.');
     return;
   }
-
   closeAssignModal();
   entry.status = targetStatus;
   if (targetStatus === 'done') saveRecord(entry);
   updateSheetsRow(entry);
   renderQueue();
   updateStats();
+  renderTurns();
   showToast(`Saved & moved to ${targetStatus === 'done' ? 'Done' : 'In Service'}`);
 }
 
@@ -3060,6 +4571,7 @@ function saveAssignments() {
   closeAssignModal();
   updateSheetsRow(entry);
   renderQueue();
+  renderTurns();
   showToast('Assignments saved');
 }
 
@@ -3067,15 +4579,13 @@ async function saveAssignmentsAndPushToSquare() {
   const entry = queue.find(e => String(e.id) === String(assignEntryId));
   if (!entry) return;
   readAssignModalInputs(entry);
-
   if (!validateAssignments(entry)) {
-    // Keep modal open — just show toast
     showToast('Please assign a tech and cost before pushing to Square.');
     return;
   }
-
   updateSheetsRow(entry);
   renderQueue();
+  renderTurns();
   showToast('Pushing to Square…');
   await pushOrderToSquare(entry);
   closeAssignModal();
@@ -3142,7 +4652,7 @@ function showGroupAssignModal(entryId) {
   const entry = queue.find(e => String(e.id) === String(entryId));
   if (!entry) return;
 
-  // Collect all group members if applicable, otherwise just this entry
+  // Collect all group members if applicable
   if (entry.groupId) {
     groupAssignEntries = queue
       .filter(e => e.groupId === entry.groupId)
@@ -3150,17 +4660,19 @@ function showGroupAssignModal(entryId) {
   } else {
     groupAssignEntries = [String(entry.id)];
   }
-  activeGroupTab = 0;
+
+  // Always start on the tab for the CLICKED entry
+  const clickedTabIdx = groupAssignEntries.indexOf(String(entryId));
+  activeGroupTab = clickedTabIdx >= 0 ? clickedTabIdx : 0;
 
   renderGroupAssignTabs();
   renderGroupAssignContent();
 
-  // Set advance label from first entry's status
-  const first = queue.find(e => String(e.id) === groupAssignEntries[0]);
+  // Set advance button label from current tab's entry status
   const advLabel = document.getElementById('group-advance-label');
-  if (advLabel && first) advLabel.textContent = first.status === 'inservice' ? 'Mark Done' : 'In Service';
+  if (advLabel && entry) advLabel.textContent = entry.status === 'inservice' ? 'Mark Done' : 'In Service';
   const advBtn = document.getElementById('group-advance-btn');
-  if (advBtn && first) advBtn.style.display = first.status === 'done' ? 'none' : '';
+  if (advBtn && entry) advBtn.style.display = entry.status === 'done' ? 'none' : '';
 
   document.getElementById('group-assign-modal').classList.remove('hidden');
   document.getElementById('group-assign-modal').style.display = 'flex';
@@ -3185,10 +4697,26 @@ function renderGroupAssignTabs() {
 }
 
 function switchGroupTab(i) {
-  // Save current tab's inputs before switching
   saveCurrentGroupTabInputs();
   activeGroupTab = i;
   renderGroupAssignTabs();
+  renderGroupAssignContent();
+  // Update advance button label for newly selected entry
+  const entryId = groupAssignEntries[i];
+  const entry = queue.find(e => String(e.id) === entryId);
+  const advLabel = document.getElementById('group-advance-label');
+  if (advLabel && entry) advLabel.textContent = entry.status === 'inservice' ? 'Mark Done' : 'In Service';
+  const advBtn = document.getElementById('group-advance-btn');
+  if (advBtn && entry) advBtn.style.display = entry.status === 'done' ? 'none' : '';
+}
+
+function cycleServiceStatus(entryId, serviceId, newStatus) {
+  // Save current modal inputs first so we don't lose tech/cost data
+  saveCurrentGroupTabInputs();
+  const entry = queue.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+  setAssignmentStatus(entry, serviceId, newStatus);
+  // Re-render the modal content to update the button
   renderGroupAssignContent();
 }
 
@@ -3199,15 +4727,26 @@ function saveCurrentGroupTabInputs() {
   if (!entry) return;
   const rows = document.querySelectorAll('#group-assign-content [data-service-id]');
   if (rows.length === 0) return;
-  entry.assignments = Array.from(rows).map(row => ({
-    serviceId: row.dataset.serviceId,
-    techId: row.querySelector('.assign-tech')?.value || '',
-    station: row.querySelector('.assign-station')?.value || '',
-    cost: parseFloat(row.querySelector('.assign-cost')?.value) || 0,
-  }));
+  if (!entry.assignments) entry.assignments = [];
+  rows.forEach(row => {
+    const sid = row.dataset.serviceId;
+    let a = entry.assignments.find(x => x.serviceId === sid);
+    if (!a) {
+      a = { serviceId: sid, status: 'waiting' }; // explicit default
+      entry.assignments.push(a);
+    }
+    const prevTech = a.techId;
+    a.techId  = row.querySelector('.assign-tech')?.value || '';
+    a.station = row.querySelector('.assign-station')?.value || '';
+    a.cost    = parseFloat(row.querySelector('.assign-cost')?.value) || 0;
+    // Stamp assignedAt when a tech is first set (for turn ordering)
+    if (a.techId && !prevTech) a.assignedAt = Date.now();
+    // NEVER touch a.status here — only cycleServiceStatus / setAssignmentStatus may change it
+  });
   entry.services = entry.assignments.map(a => a.serviceId);
-  entry.totalCost = entry.assignments.reduce((a, b) => a + b.cost, 0);
-  // Refresh party total display after save
+  entry.totalCost = entry.assignments.reduce((s, a) => s + (a.cost||0), 0);
+  // Re-derive entry status from per-service statuses
+  entry.status = deriveEntryStatus(entry);
   setTimeout(updateGroupTotal, 0);
 }
 
@@ -3226,15 +4765,31 @@ function renderGroupAssignContent() {
   const serviceRows = entry.services.map(sid => {
     const svc = SERVICES.find(s => s.id === sid) || { id: sid, label: sid };
     const assignment = (entry.assignments || []).find(a => a.serviceId === sid) || {};
-    const techOptions = STAFF.map(st =>
+    const svcStatus = getAssignmentStatus(entry, assignment);
+    const techOptions = getActiveStaff().map(st =>
       `<option value="${st.id}" ${assignment.techId === st.id ? 'selected' : ''}>${st.name}</option>`
     ).join('');
     const stationOptions = stations.map(st =>
       `<option value="${st}" ${assignment.station === st ? 'selected' : ''}>${st}</option>`
     ).join('');
+
+    // Status badge + cycle button for this service
+    const statusBtnStyle = {
+      waiting:   'background:#ffe0b2;color:#6d3200',
+      inservice: 'background:#c8e6c5;color:#1b5e20',
+      done:      'background:#dde2e5;color:#555',
+    }[svcStatus] || 'background:#ffe0b2;color:#6d3200';
+    const statusLabel = {waiting:'Waiting', inservice:'In Service', done:'Done'}[svcStatus] || 'Waiting';
+    const nextStatus = {waiting:'inservice', inservice:'done', done:'waiting'}[svcStatus];
+
     return `
       <div class="bg-surface-container-low rounded-xl p-4 border border-surface-container-high mb-3" data-service-id="${sid}">
-        <div class="font-headline font-semibold text-on-surface mb-3">${svc.label}</div>
+        <div class="flex items-center justify-between mb-3">
+          <div class="font-headline font-semibold text-on-surface">${svc.label}</div>
+          <button onclick="cycleServiceStatus('${entry.id}','${sid}','${nextStatus}')"
+            class="text-[11px] px-3 py-1 rounded-full font-body font-semibold transition-all hover:opacity-80"
+            style="${statusBtnStyle}">${statusLabel} ›</button>
+        </div>
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Technician</label>
@@ -3250,7 +4805,9 @@ function renderGroupAssignContent() {
           </div>
           <div>
             <label class="text-[10px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Cost ($)</label>
-            <input type="number" min="0" step="0.01" placeholder="0.00" value="${assignment.cost || ''}"
+            <input type="number" min="0" step="0.01"
+              placeholder="${svc.baseCost != null ? Number(svc.baseCost).toFixed(2) : '0.00'}"
+              value="${assignment.cost != null && assignment.cost !== 0 ? assignment.cost : ''}"
               class="assign-cost w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary"
               oninput="updateGroupTotal()">
           </div>
@@ -3350,53 +4907,64 @@ function validateGroupAssignments(entries) {
 
 function saveGroupAssignments() {
   const entries = collectGroupAssignments();
-  entries.forEach(e => updateSheetsRow(e));
+  entries.forEach(e => { e.status = deriveEntryStatus(e); updateSheetsRow(e); });
   closeGroupAssignModal();
   renderQueue();
+  updateStats();
+  renderTurns();
   showToast('Assignments saved');
 }
 
 function saveGroupAndAdvance() {
-  const entries = collectGroupAssignments();
-  const first = entries[0];
-  if (!first) return;
-  const targetStatus = first.status === 'inservice' ? 'done' : 'inservice';
+  const currentEntryId = groupAssignEntries[activeGroupTab];
+  const currentEntry = queue.find(e => String(e.id) === String(currentEntryId));
+  if (!currentEntry) return;
+  saveCurrentGroupTabInputs();
+
+  const curStatus = currentEntry.status || 'waiting';
+  const targetStatus = curStatus === 'inservice' ? 'done' : 'inservice';
 
   if (targetStatus === 'done') {
-    const incomplete = validateGroupAssignments(entries);
-    if (incomplete.length > 0) {
-      showToast(`${incomplete.map(e=>e.name.split(' ')[0]).join(', ')} missing tech or price.`);
-      return;
-    }
+    const incomplete = validateGroupAssignments([currentEntry]);
+    if (incomplete.length > 0) { showToast(currentEntry.name.split(' ')[0] + ' is missing tech or price.'); return; }
   }
 
-  entries.forEach(e => {
-    e.status = targetStatus;
-    if (targetStatus === 'done') saveRecord(e);
-    updateSheetsRow(e);
-  });
+  if (!currentEntry.assignments || currentEntry.assignments.length === 0) {
+    // No assignments yet — set entry status directly
+    currentEntry.status = targetStatus;
+  } else {
+    // Only advance services that have a tech assigned
+    // AND are currently in the expected source status
+    const sourceStatus = targetStatus === 'inservice' ? 'waiting' : 'inservice';
+    currentEntry.assignments.forEach(a => {
+      if (!a.techId) return; // skip unassigned services
+      const currentSvcStatus = getAssignmentStatus(currentEntry, a);
+      if (currentSvcStatus === sourceStatus) {
+        a.status = targetStatus;
+      }
+    });
+    currentEntry.status = deriveEntryStatus(currentEntry);
+  }
+
+  if (currentEntry.status === 'done') saveRecord(currentEntry);
+  updateSheetsRow(currentEntry);
   closeGroupAssignModal();
-  renderQueue();
-  updateStats();
-  showToast(`Moved to ${targetStatus === 'done' ? 'Done' : 'In Service'}`);
+  renderQueue(); updateStats(); renderTurns();
+  showToast(currentEntry.name.split(' ')[0] + ' → ' + (targetStatus === 'done' ? 'Done' : 'In Service'));
 }
 
 async function saveGroupAndPushSquare() {
   const entries = collectGroupAssignments();
   const incomplete = validateGroupAssignments(entries);
-  if (incomplete.length > 0) {
-    // Show toast but DO NOT close modal
-    showToast(`${incomplete.map(e=>e.name.split(' ')[0]).join(', ')} missing tech or price.`);
-    return;
-  }
-  // Keep modal open during push, close after success
+  if (incomplete.length > 0) { showToast(incomplete.map(e=>e.name.split(' ')[0]).join(', ') + ' missing tech or price.'); return; }
   showToast('Pushing to Square…');
   for (const e of entries) {
+    e.status = deriveEntryStatus(e);
     updateSheetsRow(e);
     await pushOrderToSquare(e);
   }
   closeGroupAssignModal();
-  renderQueue();
+  renderQueue(); renderTurns();
 }
 
 // ── Split Modal ───────────────────────────────────
