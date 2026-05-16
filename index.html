@@ -350,6 +350,10 @@ tailwind.config = {
         <span class="sync-dot ok" id="sync-dot"></span>
         <span id="sync-label">Square synced</span>
       </div>
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant" id="sheets-sync-pill" title="Google Sheets sync status">
+        <span class="w-2 h-2 rounded-full" id="sheets-sync-dot" style="background:#adb3b5"></span>
+        <span id="sheets-sync-text">Sheets</span>
+      </div>
       <button onclick="syncSquare()" title="Sync Square" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
         <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">sync</span>
       </button>
@@ -635,6 +639,41 @@ tailwind.config = {
         <div class="mb-5">
           <h2 class="text-xl font-headline font-bold text-on-surface">Settings</h2>
           <p class="text-sm font-body text-on-surface-variant mt-0.5">Configure app behavior and customer-facing options</p>
+        </div>
+
+        <!-- Data Backup & Restore -->
+        <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high mb-3 overflow-hidden">
+          <button onclick="toggleSettingsSection('backup-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
+            <div class="text-left">
+              <div class="font-headline font-bold text-on-surface">Data Backup & Restore</div>
+              <div class="text-xs font-body text-on-surface-variant mt-0.5">Export all data to a file or restore from a previous backup</div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform" id="backup-section-icon">expand_more</span>
+          </button>
+          <div id="backup-section" class="hidden px-5 pb-5 border-t border-surface-container-high pt-4">
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <button onclick="exportAllData()" class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-all">
+                <span class="material-symbols-outlined" style="font-size:18px">download</span> Export Backup
+              </button>
+              <label class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary text-primary font-body font-semibold text-sm hover:bg-primary/5 transition-all cursor-pointer">
+                <span class="material-symbols-outlined" style="font-size:18px">upload</span> Import Backup
+                <input type="file" accept=".json" class="hidden" onchange="importAllData(this)">
+              </label>
+            </div>
+            <div class="bg-surface-container rounded-xl p-4 text-xs font-body text-on-surface-variant space-y-1">
+              <div class="font-semibold text-on-surface mb-1">What's included in the backup:</div>
+              <div>✓ All transaction records (Reports history)</div>
+              <div>✓ Today's active queue</div>
+              <div>✓ Staff list, services, schedule</div>
+              <div>✓ Queue archive (90 days)</div>
+              <div>✓ Turns history</div>
+              <div class="mt-2 text-outline italic">Tip: Export to Google Drive or your hard drive weekly.</div>
+            </div>
+            <div class="mt-3 p-3 bg-surface-container rounded-xl">
+              <div class="text-xs font-body font-semibold text-on-surface mb-1">Last backup</div>
+              <div class="text-xs font-body text-on-surface-variant" id="last-backup-label">Never</div>
+            </div>
+          </div>
         </div>
 
         <!-- Collapsible: Check-In Services -->
@@ -1155,6 +1194,37 @@ const SHEETS_ID = "1KbIYBLahiN54t-pUu4KcXM2AEJsthQZeVFbNqf2hsT0";
 
 // ── State ────────────────────────────────────────
 let queue = [];
+// ── Queue Persistence ──────────────────────────────
+const QUEUE_STORAGE_KEY = 'muse_live_queue';
+const QUEUE_DATE_KEY    = 'muse_live_queue_date';
+
+function saveQueueToStorage() {
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem(QUEUE_DATE_KEY, today);
+  localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue.map(e => ({
+    ...e,
+    checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+  }))));
+  scheduleSheetsSave(); // also sync to Sheets (throttled 3s)
+}
+
+function loadQueueFromStorage() {
+  const savedDate = localStorage.getItem(QUEUE_DATE_KEY);
+  const today     = new Date().toISOString().slice(0, 10);
+  // Only restore if it was saved today — don't restore yesterday's queue
+  if (savedDate !== today) {
+    localStorage.removeItem(QUEUE_STORAGE_KEY);
+    localStorage.removeItem(QUEUE_DATE_KEY);
+    return [];
+  }
+  try {
+    const raw = JSON.parse(localStorage.getItem(QUEUE_STORAGE_KEY) || '[]');
+    return raw.map(e => ({
+      ...e,
+      checkinTime: new Date(e.checkinTime),
+    }));
+  } catch { return []; }
+}
 let squareCustomers = [];
 let guestCount = 0;
 let currentFilter = 'all';
@@ -1199,7 +1269,20 @@ function saveServicesToStorage() { localStorage.setItem('muse_services', JSON.st
 function saveStaffToStorage()    { localStorage.setItem('muse_staff',    JSON.stringify(STAFF));    }
 
 // ── Init ─────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. Try localStorage first (instant, works offline)
+  queue = loadQueueFromStorage();
+
+  // 2. If empty AND Sheets configured, try to restore from Sheets
+  if (queue.length === 0 && squareConfig) {
+    const sheetsQueue = await loadQueueFromSheets();
+    if (sheetsQueue && sheetsQueue.length > 0) {
+      queue = sheetsQueue;
+      saveQueueToStorage();
+      showToast('Queue restored from Google Sheets ✓');
+    }
+  }
+
   setLogo();
   startClock();
   renderGuestsContainer();
@@ -1279,6 +1362,9 @@ function scheduleMidnightReset() {
     turnsBreakStaff = [];
     saveTurnsBreak();
     queue = [];
+    localStorage.removeItem(QUEUE_STORAGE_KEY);
+    localStorage.removeItem(QUEUE_DATE_KEY);
+    clearSheetsQueue(); // clear queue in Sheets too
     renderQueue();
     updateStats();
     renderTurns();
@@ -1288,7 +1374,6 @@ function scheduleMidnightReset() {
 }
 
 function archiveTodayQueue() {
-  // Save today's queue to historical records before clearing
   const today = new Date().toISOString().slice(0, 10);
   const existing = JSON.parse(localStorage.getItem('muse_queue_archive') || '{}');
   existing[today] = queue.map(e => ({
@@ -1300,7 +1385,7 @@ function archiveTodayQueue() {
   const pruned = {};
   keys.forEach(k => pruned[k] = existing[k]);
   localStorage.setItem('muse_queue_archive', JSON.stringify(pruned));
-  // Also save to allRecords for reports
+  // Save ALL entries to records (not just done — captures partial transactions too)
   queue.forEach(e => saveRecord(e));
 }
 
@@ -1723,6 +1808,7 @@ function submitCheckin() {
 
 // ── Queue (Front Desk) ───────────────────────────
 function renderQueue() {
+  saveQueueToStorage(); // persist on every change
   const list = document.getElementById('queue-list');
   const empty = document.getElementById('queue-empty');
 
@@ -2394,7 +2480,7 @@ async function updateSheetsRow(entry) {
       body: JSON.stringify(payload),
     }).catch(() => {
       // Fallback: direct fetch with no-cors if proxy path fails
-      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbwCl33ouJmhTB045tbDWUpOhZDquCz2FTfDHnqerofao7KGGRljRXtXaKTOxb7syR0czA/exec`;
+      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxgXgc59m-Ww56PHvM-h18JqCSLcuucvBMRQS3Z0FnqAlsf3C9w53g8ujT_T1IaYDd4IA/exec`;
       return fetch(SHEETS_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
@@ -4101,6 +4187,158 @@ function setupTurnsDragDrop() {
     card.parentNode && card.parentNode.replaceChild(newCard, card);
     newCard.addEventListener('pointerdown', startTurnsDrag);
   });
+}
+
+// ── Google Sheets Queue Sync ──────────────────────
+const SHEETS_PROXY = 'https://musesquareapi.cpacheco847.workers.dev/sheets';
+let _sheetsSaveTimer = null;
+
+// Throttled save — waits 3s after last change before writing to Sheets
+// Prevents hammering the API on rapid consecutive updates
+function scheduleSheetsSave() {
+  if (_sheetsSaveTimer) clearTimeout(_sheetsSaveTimer);
+  _sheetsSaveTimer = setTimeout(pushQueueToSheets, 3000);
+}
+
+async function pushQueueToSheets() {
+  if (!squareConfig) return;
+  const dot  = document.getElementById('sheets-sync-dot');
+  const text = document.getElementById('sheets-sync-text');
+  try {
+    if (dot)  dot.style.background  = '#f5c870'; // yellow = syncing
+    if (text) text.textContent = 'Syncing…';
+    const payload = {
+      action: 'saveQueue',
+      queue: queue.map(e => ({
+        ...e,
+        checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+      })),
+    };
+    const res = await fetch(SHEETS_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (dot)  dot.style.background  = '#2a7a4f'; // green = synced
+      if (text) text.textContent = 'Sheets ✓';
+    } else throw new Error('Sheets returned error');
+  } catch (e) {
+    if (dot)  dot.style.background  = '#fa746f'; // red = failed
+    if (text) text.textContent = 'Sheets ✗';
+  }
+}
+
+async function loadQueueFromSheets() {
+  if (!squareConfig) return null;
+  try {
+    const res  = await fetch(`${SHEETS_PROXY}?action=loadQueue`);
+    const data = await res.json();
+    if (data.success && Array.isArray(data.queue) && data.queue.length > 0) {
+      return data.queue.map(e => ({ ...e, checkinTime: new Date(e.checkinTime) }));
+    }
+  } catch (e) { /* silent */ }
+  return null;
+}
+
+async function clearSheetsQueue() {
+  if (!squareConfig) return;
+  try {
+    await fetch(SHEETS_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clearQueue' }),
+    });
+  } catch (e) { /* silent */ }
+}
+
+
+function exportAllData() {
+  const allKeys = [
+    'muse_records', 'muse_queue_archive', 'muse_turns_history',
+    'muse_live_queue', 'muse_live_queue_date',
+    'muse_staff', 'muse_services', 'muse_fd_users',
+    'muse_schedule', 'muse_sq_config',
+    'muse_hidden_services', 'muse_inactive_staff',
+    'muse_turns_order', 'muse_turns_break',
+  ];
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    appVersion: 'muse-checkin-2026',
+    data: {}
+  };
+  allKeys.forEach(key => {
+    const val = localStorage.getItem(key);
+    if (val) backup.data[key] = JSON.parse(val);
+  });
+  // Also include in-memory queue
+  backup.data['muse_live_queue'] = queue.map(e => ({
+    ...e,
+    checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+  }));
+
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = `muse-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  // Record last backup time
+  const now = new Date().toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  localStorage.setItem('muse_last_backup', now);
+  const lbl = document.getElementById('last-backup-label');
+  if (lbl) lbl.textContent = now;
+  showToast('Backup downloaded ✓');
+}
+
+function importAllData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.data) { showToast('Invalid backup file.'); return; }
+
+      const confirmImport = confirm(
+        `Restore backup from ${backup.exportedAt?.slice(0,10) || 'unknown date'}?\n\n` +
+        `This will REPLACE your current data with the backup.\n` +
+        `Your current data will be overwritten.`
+      );
+      if (!confirmImport) return;
+
+      // Write all keys to localStorage
+      Object.entries(backup.data).forEach(([key, val]) => {
+        localStorage.setItem(key, JSON.stringify(val));
+      });
+
+      // Reload queue from restored data
+      queue = loadQueueFromStorage();
+      renderQueue();
+      updateStats();
+      renderTurns();
+      showToast('Backup restored — reloading…');
+      setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+      showToast('Failed to read backup file.');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // reset input
+}
+
+// Show last backup date in settings when panel opens
+function renderSettingsPanel() {
+  renderSettingsServiceVisibility();
+  renderSettingsActiveStaff();
+  const lbl = document.getElementById('last-backup-label');
+  if (lbl) lbl.textContent = localStorage.getItem('muse_last_backup') || 'Never';
 }
 
 async function squarePullStaff() {
