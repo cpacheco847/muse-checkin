@@ -365,9 +365,9 @@ tailwind.config = {
         <span class="sync-dot ok" id="sync-dot"></span>
         <span id="sync-label">Square synced</span>
       </div>
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant" id="sheets-sync-pill" title="Google Sheets sync status">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant" id="sheets-sync-pill" title="Google Sheets sync status — tap to force sync">
         <span class="w-2 h-2 rounded-full" id="sheets-sync-dot" style="background:#adb3b5"></span>
-        <span id="sheets-sync-text">Sheets</span>
+        <button onclick="forceSyncNow()" class="hover:text-on-surface transition-colors"><span id="sheets-sync-text">Sheets</span></button>
       </div>
       <button onclick="syncSquare()" title="Sync Square" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
         <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">sync</span>
@@ -1529,14 +1529,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkAppVersion();
   // 1. Load from localStorage instantly (offline fallback)
   queue = loadQueueFromStorage();
+  renderQueue(); // show local data immediately while fetching
 
-  // Start Sheets polling immediately on load — works on both customer and dashboard screens
+  // Start Sheets polling immediately on load
   startSheetsPolling();
 
-  // 2. Sheets is always the authority — fetch and replace local
+  // 2. Fetch from Sheets — with retry (Apps Script can be slow on cold start)
   setSheetsIndicator('syncing');
 
-  // Sync config (staff, services, schedule) from Sheets first
   if (squareConfig) {
     const configChanged = await loadConfigFromSheets();
     if (configChanged) {
@@ -1547,13 +1547,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  const result = await loadQueueFromSheets();
-  if (result && result.queue.length > 0) {
+  // Try to load queue from Sheets — retry once if first attempt fails
+  let result = await loadQueueFromSheets();
+  if (!result) {
+    console.log('[Sync] First load failed, retrying in 3s…');
+    await new Promise(r => setTimeout(r, 3000));
+    result = await loadQueueFromSheets();
+  }
+
+  if (result) {
+    console.log('[Sync] Loaded from Sheets:', result.queue.length, 'entries, updatedAt:', result.updatedAt);
+    // Always replace local with Sheets on startup — Sheets is the authority
     queue = result.queue;
     _lastSheetsUpdate = result.updatedAt;
     saveQueueToStorage();
+    renderQueue(); // re-render with Sheets data
+    updateStats();
+  } else {
+    console.warn('[Sync] Could not load from Sheets — using localStorage fallback');
   }
-  setSheetsIndicator('ok');
+  setSheetsIndicator(result ? 'ok' : 'error');
   startElapsedTimer();
   if (squareConfig) setTimeout(() => pushConfigToSheets(), 3000);
 
@@ -5104,10 +5117,14 @@ async function pollSheets() {
     const sheetsTime = result.updatedAt ? new Date(result.updatedAt).getTime() : 0;
     const localTime  = _lastSheetsUpdate ? new Date(_lastSheetsUpdate).getTime() : 0;
 
-    // Accept if Sheets is newer — even if queue is empty (e.g. after midnight reset)
-    if (sheetsTime > localTime) {
-      console.log('[Sync] Sheets update detected:', result.updatedAt, '| queue size:', result.queue.length);
-      _lastSheetsUpdate = result.updatedAt;
+    // Accept if: timestamp is newer, OR queue size differs (catches missed updates)
+    const isNewer   = sheetsTime > localTime;
+    const sizeDiff  = result.queue.length !== queue.length;
+    const needsSync = isNewer || sizeDiff;
+
+    if (needsSync) {
+      console.log('[Sync] Poll update — Sheets:', result.queue.length, 'local:', queue.length, 'newer:', isNewer);
+      _lastSheetsUpdate = result.updatedAt || new Date().toISOString();
       queue = result.queue;
       saveQueueToStorage();
       renderQueue();
@@ -5122,6 +5139,29 @@ async function pollSheets() {
 }
 
 // Start polling when the dashboard is open
+async function forceSyncNow() {
+  setSheetsIndicator('syncing');
+  try {
+    const result = await loadQueueFromSheets();
+    if (result) {
+      queue = result.queue;
+      _lastSheetsUpdate = result.updatedAt;
+      saveQueueToStorage();
+      renderQueue();
+      updateStats();
+      renderTurns();
+      setSheetsIndicator('ok');
+      showToast(`Synced — ${result.queue.length} customer${result.queue.length !== 1 ? 's' : ''} in queue`);
+    } else {
+      setSheetsIndicator('error');
+      showToast('Sync failed — check connection');
+    }
+  } catch(e) {
+    setSheetsIndicator('error');
+    showToast('Sync error: ' + e.message);
+  }
+}
+
 function startSheetsPolling() {
   if (_pollTimer) return;
   _pollTimer = setInterval(pollSheets, POLL_INTERVAL);
