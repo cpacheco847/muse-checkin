@@ -1376,6 +1376,7 @@ function saveStaffToStorage()    { localStorage.setItem('muse_staff',    JSON.st
 
 // ── Init ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  checkAppVersion();
   // 1. Load from localStorage instantly (offline fallback)
   queue = loadQueueFromStorage();
 
@@ -2544,8 +2545,55 @@ async function exportToSheets(entry) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
     });
+
+    // Check-Ins tab: create/update the single row for this customer
+    await sendCheckinRow(entry);
   } catch(e) {
     console.warn('Sheets export failed:', e);
+  }
+}
+
+// Send/update the single Check-Ins row for this customer.
+// Called on first check-in (arrival) and again whenever status changes.
+// The Apps Script upserts by entryId so there's always exactly one row per customer.
+async function sendCheckinRow(entry) {
+  try {
+    const checkinTime = (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toISOString();
+    const isDone      = entry.status === 'done';
+    const completedAt = isDone && !entry.completedAt
+      ? new Date().toISOString()           // first time marked done
+      : isDone && entry.completedAt
+        ? (entry.completedAt instanceof Date ? entry.completedAt.toISOString() : entry.completedAt)
+        : null;                            // not done (waiting/inservice/reopened) — clear it
+
+    // Persist the completedAt on the entry so it survives re-renders
+    if (isDone && !entry.completedAt) entry.completedAt = completedAt;
+    const staff       = [...new Set(
+      (entry.assignments||[]).filter(a=>a.techId)
+        .map(a => STAFF.find(s=>s.id===a.techId)?.name)
+        .filter(Boolean)
+    )].join(', ');
+
+    await fetch(`${SQUARE_PROXY.replace('/square', '')}/sheets`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:      'checkinRow',
+        entryId:     String(entry.id),
+        checkinTime,
+        completedAt,
+        name:        entry.name,
+        phone:       entry.phone || '',
+        services:    entry.services.map(sid => SERVICES.find(s=>s.id===sid)?.label || sid),
+        type:        entry.isAppointment ? 'Appointment' : 'Walk-In',
+        status:      entry.status || 'waiting',
+        staff,
+        total:       entry.totalCost ? Number(entry.totalCost) : 0,
+        loggedBy:    activeUser ? activeUser.name : '',
+      }),
+    });
+  } catch(e) {
+    console.warn('Check-in row failed:', e);
   }
 }
 
@@ -2598,7 +2646,6 @@ async function updateSheetsRow(entry) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).catch(() => {
-      // Fallback: direct fetch with no-cors if proxy path fails
       const SHEETS_URL = `https://script.google.com/macros/s/AKfycbwuUE8IBZY0tx9f2pB-H1lDIv_NBtvFCy310HxJd9ndM5SITuC9l1hN3mwQwY3Ovf1E0g/exec`;
       return fetch(SHEETS_URL, {
         method: 'POST', mode: 'no-cors',
@@ -2606,6 +2653,10 @@ async function updateSheetsRow(entry) {
         body: JSON.stringify(payload),
       });
     });
+
+    // Keep Check-Ins row current on every update (upserts in place)
+    sendCheckinRow(entry);
+
   } catch(e) { console.warn('Sheets update failed:', e); }
 }
 
@@ -2632,6 +2683,9 @@ function saveRecord(entry) {
   if (existing >= 0) allRecords[existing] = snapshot;
   else allRecords.push(snapshot);
   localStorage.setItem('muse_records', JSON.stringify(allRecords));
+
+  // Update the single Check-Ins row with final status and completion time
+  sendCheckinRow(entry);
 }
 
 // Override updateStatus to also save record when done
@@ -3618,7 +3672,20 @@ function getTechAllAssignments(techId) {
 }
 
 
-// ── Turn Thresholds ───────────────────────────────
+// ── App Version & Data Preservation ──────────────
+// localStorage is tied to the domain (cpacheco847.github.io/muse-checkin)
+// so all data automatically persists across app updates — no action needed.
+// This version stamp lets us detect future migrations if data schema changes.
+const APP_VERSION = '2026.06';
+function checkAppVersion() {
+  const stored = localStorage.getItem('muse_app_version');
+  if (stored !== APP_VERSION) {
+    // Future: add data migration logic here if schema changes
+    localStorage.setItem('muse_app_version', APP_VERSION);
+  }
+}
+
+
 // Loaded from localStorage; defaults match original values
 function getTurnConfig() {
   const defaults = { fullMin: 28, halfMin: 12 };
@@ -5719,12 +5786,23 @@ function confirmReopen(entryId) {
   if (!entry) return;
   showWarnModal(
     'Reopen this ticket?',
-    `This will move ${entry.name} back to "In Service." Any changes will update Google Sheets. This cannot be undone automatically.`,
+    `This will move ${entry.name} back to "In Service." Google Sheets will be updated.`,
     () => {
+      // Reset entry and all assignment statuses back to inservice
       entry.status = 'inservice';
-      updateSheetsRow(entry);
+      if (entry.assignments) {
+        entry.assignments.forEach(a => {
+          if (getAssignmentStatus(entry, a) === 'done') a.status = 'inservice';
+        });
+      }
+      // Clear any completed timestamp so Check-Ins row doesn't show wrong completion time
+      entry.completedAt = null;
+
+      updateSheetsRow(entry); // updates Transaction Log + Check-Ins row (no completedAt → clears it)
+      saveQueueToStorage();
       renderQueue();
       updateStats();
+      renderTurns();
       showToast(`${entry.name}'s ticket reopened`);
     }
   );
