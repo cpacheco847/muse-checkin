@@ -1503,13 +1503,12 @@ function archiveTodayQueue() {
     ...e,
     checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
   }));
-  // Keep last 90 days only
   const keys = Object.keys(existing).sort().slice(-90);
   const pruned = {};
   keys.forEach(k => pruned[k] = existing[k]);
   localStorage.setItem('muse_queue_archive', JSON.stringify(pruned));
-  // Save ALL entries to records (not just done — captures partial transactions too)
-  queue.forEach(e => saveRecord(e));
+  // NOTE: do NOT re-export to Sheets here — each entry was already written
+  // to Sheets when it was checked in and when it was marked done.
 }
 
 // ── Queue History Browser ─────────────────────────
@@ -2653,10 +2652,8 @@ async function updateSheetsRow(entry) {
         body: JSON.stringify(payload),
       });
     });
-
-    // Keep Check-Ins row current on every update (upserts in place)
-    sendCheckinRow(entry);
-
+    // NOTE: sendCheckinRow is NOT called here — it's called only from
+    // exportToSheets (on arrival) and saveRecord (on completion) to avoid duplicates.
   } catch(e) { console.warn('Sheets update failed:', e); }
 }
 
@@ -5894,49 +5891,80 @@ async function squarePullServices() {
 // Push an order to Square for easy checkout
 async function pushOrderToSquare(entry) {
   if (!squareConfig) { showToast('Square not configured.'); return; }
-  if (!squareConfig.locationId) { showToast('Location ID missing in Square settings.'); return; }
+  if (!squareConfig.locationId) { showToast('Location ID missing.'); return; }
 
+  // Build line items — service name + price (no tech name since you'll assign in Square POS)
   const lineItems = (entry.assignments || [])
     .filter(a => a.cost > 0)
     .map(a => {
-      const svc  = SERVICES.find(s => s.id === a.serviceId);
-      const tech = STAFF.find(s => s.id === a.techId);
+      const svc = SERVICES.find(s => s.id === a.serviceId);
       return {
-        name: [svc?.label || 'Service', tech ? `(${tech.name})` : ''].filter(Boolean).join(' '),
+        name:     svc?.label || 'Service',
         quantity: '1',
-        base_price_money: { amount: Math.round(a.cost * 100), currency: 'USD' },
+        base_price_money: { amount: Math.round(Number(a.cost) * 100), currency: 'USD' },
+        note: a.station || '',
       };
     });
 
+  // Also add any services that have no assignment yet (no price) as $0 line items
+  // so the staff can see everything in Square POS
+  const assignedSvcIds = new Set((entry.assignments||[]).map(a => a.serviceId));
+  entry.services.forEach(sid => {
+    if (!assignedSvcIds.has(sid)) {
+      const svc = SERVICES.find(s => s.id === sid);
+      lineItems.push({
+        name: svc?.label || 'Service',
+        quantity: '1',
+        base_price_money: { amount: 0, currency: 'USD' },
+      });
+    }
+  });
+
   if (lineItems.length === 0) {
-    showToast('Add at least one priced service before pushing to Square.');
+    showToast('No services to push to Square.');
     return;
   }
 
-  showToast('Pushing to Square…');
+  showToast('Creating Square ticket…');
 
   try {
-    // First try to find the customer in Square by phone
+    // Look up Square customer by phone so the ticket is linked to them
     let customerId = null;
     if (entry.phone) {
-      const cleanPhone = entry.phone.replace(/\D/g, '');
-      const searchRes = await fetch(`${SQUARE_PROXY}/v2/customers/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: { filter: { phone_number: { exact: entry.phone } } } }),
-      });
-      if (searchRes.ok) {
-        const sd = await searchRes.json();
-        customerId = sd?.customers?.[0]?.id || null;
-      }
+      try {
+        const searchRes = await fetch(`${SQUARE_PROXY}/v2/customers/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: { filter: { phone_number: { exact: entry.phone } } } }),
+        });
+        if (searchRes.ok) {
+          const sd = await searchRes.json();
+          customerId = sd?.customers?.[0]?.id || null;
+        }
+      } catch(e) { /* non-fatal — proceed without customer link */ }
     }
 
+    // Create an OPEN order with PICKUP fulfillment
+    // This is what makes it appear as an Open Ticket in Square POS
     const orderBody = {
-      idempotency_key: `muse-order-${String(entry.id).replace('.', '')}-${Date.now()}`,
+      idempotency_key: `muse-${String(entry.id)}-${Date.now()}`,
       order: {
         location_id: squareConfig.locationId,
-        line_items: lineItems,
-        reference_id: `muse-${entry.name.slice(0,10).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}`,
+        state:       'OPEN',
+        reference_id: `muse-${String(entry.id).slice(-8)}`,
+        line_items:  lineItems,
+        fulfillments: [{
+          type:  'PICKUP',
+          state: 'PROPOSED',
+          pickup_details: {
+            recipient: {
+              display_name: entry.name,
+              phone_number: entry.phone || '',
+            },
+            pickup_at: new Date(Date.now() + 30 * 60000).toISOString(), // ~30 min from now
+            note: `Check-in: ${(entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`,
+          },
+        }],
         ...(customerId ? { customer_id: customerId } : {}),
       },
     };
@@ -5947,27 +5975,25 @@ async function pushOrderToSquare(entry) {
       body: JSON.stringify(orderBody),
     });
 
-    if (orderRes.ok) {
-      const od = await orderRes.json();
-      const orderId = od?.order?.id;
-      const total = od?.order?.total_money?.amount;
-      const totalDisplay = total != null ? ` · Total $${(total/100).toFixed(2)}` : '';
-      showToast(`✓ Order in Square${totalDisplay}`);
-      // Store square order ID on entry for reference
+    const od = await orderRes.json();
+    if (orderRes.ok && od?.order?.id) {
+      const orderId = od.order.id;
+      const total   = od.order.total_money?.amount;
+      const display = total != null ? ` · $${(total/100).toFixed(2)}` : '';
       entry.squareOrderId = orderId;
+      showToast(`✓ Ticket open in Square POS${display}`);
+      saveQueueToStorage();
       renderQueue();
     } else {
-      const err = await orderRes.json();
-      const msg = err?.errors?.[0]?.detail || err?.errors?.[0]?.code || 'Unknown error';
+      const msg = od?.errors?.[0]?.detail || od?.errors?.[0]?.code || JSON.stringify(od);
       showToast(`Square error: ${msg}`);
-      console.error('Square order error:', err);
+      console.error('Square order error:', od);
     }
   } catch(e) {
-    console.error('Square order push failed:', e);
+    console.error('Square push failed:', e);
     showToast('Could not reach Square. Check proxy.');
   }
 }
-
 async function squarePullCustomers() {
   if (!squareConfig) return;
   const res = await fetch(`${SQUARE_PROXY}/v2/customers?limit=100`);
