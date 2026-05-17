@@ -101,11 +101,29 @@ tailwind.config = {
   /* Report range buttons */
   .rng-btn.active { background:#1a5252 !important; color:#ffffff !important; }
 
+  /* Tablet / iPad responsive scaling */
+  @media (max-width: 1024px) {
+    #panel-turns .flex-shrink-0[style*="width:380px"] { width: 300px !important; }
+    .turns-slot-row .flex-shrink-0 { width: 130px !important; }
+    #turns-tech-grid .w-\[155px\] { width: 130px !important; }
+  }
+  @media (max-width: 768px) {
+    #panel-turns .flex-shrink-0[style*="width:380px"] { width: 260px !important; }
+    .w-\[165px\] { width: 130px !important; }
+    .dash-tab { font-size: 11px !important; padding: 6px 10px !important; }
+    .dash-tab .material-symbols-outlined { font-size: 15px !important; }
+  }
   /* Turns drag-drop */
   .turns-draggable { cursor: grab; }
   .turns-draggable:active { cursor: grabbing; }
   .turns-drop-target { border: 2px dashed #1a5252 !important; background: #e0f0f0 !important; }
   .turns-drag-over { opacity: 0.5; }
+  /* Touch-friendly tap targets */
+  @media (pointer: coarse) {
+    .turns-empty-slot { min-height: 60px !important; }
+    .q-action-btn { min-width: 48px !important; min-height: 48px !important; }
+    button { touch-action: manipulation; }
+  }
 
   /* Queue action buttons — large touch targets */
   .q-action-btn { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; border:none; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
@@ -611,24 +629,26 @@ tailwind.config = {
         </div>
 
         <!-- Two column layout — left scrolls, right sticks -->
-        <div class="flex gap-4" style="align-items:flex-start;min-height:400px">
-          <!-- Left: grid scrolls inside itself -->
+        <div class="flex gap-3" style="align-items:flex-start;min-height:400px">
+          <!-- Left: grid -->
           <div class="flex-grow overflow-y-auto overflow-x-hidden" style="scrollbar-width:thin;max-height:calc(100vh - 210px)" id="turns-tech-grid"></div>
-          <!-- Right: sticky, always visible -->
-          <div class="w-72 flex-shrink-0 flex flex-col gap-3" style="position:sticky;top:0;max-height:calc(100vh - 210px)">
-            <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden flex flex-col" style="max-height:48%;border-left:3px solid #d4860a">
-              <div class="px-4 py-2 border-b border-surface-container-high flex items-center justify-between flex-shrink-0" style="background:rgba(255,224,178,0.3)">
-                <span class="text-xs font-headline font-bold uppercase tracking-widest" style="color:#a05000">Waiting</span>
-                <span class="text-xs font-body text-on-surface-variant" id="turns-waiting-label">0 in queue</span>
+          <!-- Right: waiting + active side by side, sticky, narrower -->
+          <div class="flex-shrink-0 flex gap-2" style="position:sticky;top:0;width:380px;max-height:calc(100vh - 210px)">
+            <!-- Waiting -->
+            <div class="flex flex-col overflow-hidden rounded-xl border" style="flex:1;border-left:3px solid #d4860a;max-height:calc(100vh - 210px)">
+              <div class="px-2 py-1.5 border-b border-surface-container-high flex items-center justify-between flex-shrink-0" style="background:rgba(255,224,178,0.3)">
+                <span class="text-[11px] font-headline font-bold uppercase tracking-widest" style="color:#a05000">Waiting</span>
+                <span class="text-[10px] font-body text-on-surface-variant" id="turns-waiting-label">0</span>
               </div>
-              <div id="turns-waiting-list" class="divide-y divide-surface-container-high overflow-y-auto" style="scrollbar-width:auto;flex:1"></div>
+              <div id="turns-waiting-list" class="overflow-y-auto bg-surface-container-lowest" style="scrollbar-width:auto;flex:1"></div>
             </div>
-            <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden flex flex-col" style="max-height:48%;border-left:3px solid #2a7a4f">
-              <div class="px-4 py-2 border-b border-surface-container-high flex items-center justify-between flex-shrink-0" style="background:rgba(200,230,197,0.3)">
-                <span class="text-xs font-headline font-bold uppercase tracking-widest" style="color:#1b5e20">Active</span>
-                <span class="text-xs font-body text-on-surface-variant" id="turns-active-label">0 in service</span>
+            <!-- Active -->
+            <div class="flex flex-col overflow-hidden rounded-xl border" style="flex:1;border-left:3px solid #2a7a4f;max-height:calc(100vh - 210px)">
+              <div class="px-2 py-1.5 border-b border-surface-container-high flex items-center justify-between flex-shrink-0" style="background:rgba(200,230,197,0.3)">
+                <span class="text-[11px] font-headline font-bold uppercase tracking-widest" style="color:#1b5e20">Active</span>
+                <span class="text-[10px] font-body text-on-surface-variant" id="turns-active-label">0</span>
               </div>
-              <div id="turns-active-list" class="divide-y divide-surface-container-high overflow-y-auto" style="scrollbar-width:auto;flex:1"></div>
+              <div id="turns-active-list" class="overflow-y-auto bg-surface-container-lowest" style="scrollbar-width:auto;flex:1"></div>
             </div>
           </div>
         </div>
@@ -639,6 +659,42 @@ tailwind.config = {
         <div class="mb-5">
           <h2 class="text-xl font-headline font-bold text-on-surface">Settings</h2>
           <p class="text-sm font-body text-on-surface-variant mt-0.5">Configure app behavior and customer-facing options</p>
+        </div>
+
+        <!-- Turn Thresholds -->
+        <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high mb-3 overflow-hidden">
+          <button onclick="toggleSettingsSection('turns-thresh-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
+            <div class="text-left">
+              <div class="font-headline font-bold text-on-surface">Turn Thresholds</div>
+              <div class="text-xs font-body text-on-surface-variant mt-0.5">Set price cutoffs for full, half, and bonus turns</div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant" id="turns-thresh-section-icon">expand_more</span>
+          </button>
+          <div id="turns-thresh-section" class="hidden px-5 pb-5 border-t border-surface-container-high pt-4">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Full Turn minimum ($)</label>
+                <input id="thresh-full" type="number" min="1" step="1"
+                  class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-base font-headline text-on-surface focus:border-primary outline-none"
+                  placeholder="28">
+                <p class="text-[11px] font-body text-on-surface-variant mt-1">At or above = 1 full turn</p>
+              </div>
+              <div>
+                <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Half Turn minimum ($)</label>
+                <input id="thresh-half" type="number" min="1" step="1"
+                  class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-base font-headline text-on-surface focus:border-primary outline-none"
+                  placeholder="12">
+                <p class="text-[11px] font-body text-on-surface-variant mt-1">Between half min and full min = half turn. Below half min = bonus</p>
+              </div>
+            </div>
+            <button onclick="saveTurnThresholds()" class="w-full bg-primary text-on-primary py-3 rounded-xl font-headline font-bold mb-4 hover:bg-primary-dim transition-all active:scale-95">Save Thresholds</button>
+
+            <div class="border-t border-surface-container-high pt-4">
+              <div class="font-headline font-semibold text-on-surface mb-1">Always-Bonus Services</div>
+              <p class="text-xs font-body text-on-surface-variant mb-3">These services always count as bonus regardless of price (e.g. add-ons, fees)</p>
+              <div id="bonus-services-list" class="space-y-2"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Square Connection -->
@@ -1323,22 +1379,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Load from localStorage instantly (offline fallback)
   queue = loadQueueFromStorage();
 
-  // 2. Sheets is source of truth — always fetch latest on load
+  // 2. Sheets is always the authority — fetch and replace local
   if (squareConfig) {
     setSheetsIndicator('syncing');
     const result = await loadQueueFromSheets();
     if (result && result.queue.length > 0) {
+      // Sheets has data — always use it, regardless of what's local
       queue = result.queue;
       _lastSheetsUpdate = result.updatedAt;
       saveQueueToStorage();
       setSheetsIndicator('ok');
-    } else if (queue.length > 0) {
-      // Local has data but Sheets is empty — push local up
-      pushQueueToSheets();
     } else {
+      // Sheets is empty today — don't push local up automatically
+      // Local data stays as offline fallback but won't overwrite Sheets
       setSheetsIndicator('ok');
     }
-    // Start polling for changes from other devices
     startSheetsPolling();
   }
 
@@ -2544,7 +2599,7 @@ async function updateSheetsRow(entry) {
       body: JSON.stringify(payload),
     }).catch(() => {
       // Fallback: direct fetch with no-cors if proxy path fails
-      const SHEETS_URL = `https://script.google.com/macros/s/AKfycby2KFMSdFhtIAV46MNaTMq-j6xiF0oiFBkagPPge6gDfDds4wyIxXpgwp7AOHHkUb6qGw/exec`;
+      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbwuUE8IBZY0tx9f2pB-H1lDIv_NBtvFCy310HxJd9ndM5SITuC9l1hN3mwQwY3Ovf1E0g/exec`;
       return fetch(SHEETS_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
@@ -2667,8 +2722,9 @@ function runReport() {
       staffMap[a.techId].income += a.cost || 0;
       staffMap[a.techId].count++;
       const cost = a.cost || 0;
-      if (cost >= 28)       staffMap[a.techId].fullTurns  += 1;
-      else if (cost >= 12)  staffMap[a.techId].halfTurns  += 0.5;
+      const ttype = classifyTurn(cost, a.serviceId||'');
+      if (ttype === 'full')       staffMap[a.techId].fullTurns  += 1;
+      else if (ttype === 'half')  staffMap[a.techId].halfTurns  += 0.5;
       else                  staffMap[a.techId].bonusTurns += 1;
     });
   });
@@ -3561,14 +3617,43 @@ function getTechAllAssignments(techId) {
   return result;
 }
 
+
+// ── Turn Thresholds ───────────────────────────────
+// Loaded from localStorage; defaults match original values
+function getTurnConfig() {
+  const defaults = { fullMin: 28, halfMin: 12 };
+  try {
+    const stored = JSON.parse(localStorage.getItem('muse_turn_config') || 'null');
+    return stored ? { ...defaults, ...stored } : defaults;
+  } catch { return defaults; }
+}
+function saveTurnConfig(cfg) { localStorage.setItem('muse_turn_config', JSON.stringify(cfg)); }
+
+// Check if a serviceId is flagged as always-bonus
+function isAlwaysBonusService(serviceId) {
+  const bonusIds = JSON.parse(localStorage.getItem('muse_bonus_services') || '[]');
+  return bonusIds.includes(serviceId);
+}
+function saveBonusServices(ids) { localStorage.setItem('muse_bonus_services', JSON.stringify(ids)); }
+
+// Classify a cost+serviceId into turn type using current config
+function classifyTurn(cost, serviceId) {
+  if (isAlwaysBonusService(serviceId)) return 'bonus';
+  const cfg = getTurnConfig();
+  if (!cost || cost <= 0) return 'unpriced';
+  if (cost >= cfg.fullMin) return 'full';
+  if (cost >= cfg.halfMin) return 'half';
+  return 'bonus';
+}
+
 function getTechTurns(techId) {
   const assignments = getTechAllAssignments(techId);
   let full = 0, half = 0, bonus = 0;
   assignments.forEach(({ assignment: a }) => {
-    const cost = a.cost || 0;
-    if (cost >= 28)      full++;
-    else if (cost >= 12) half += 0.5;
-    else if (cost > 0)   bonus++;
+    const type = classifyTurn(a.cost || 0, a.serviceId || '');
+    if (type === 'full')  full++;
+    else if (type === 'half')  half += 0.5;
+    else if (type === 'bonus') bonus++;
   });
   return { full, half, bonus, total: full + half };
 }
@@ -3777,6 +3862,66 @@ function closeTurnsTechModal() {
 
 
 
+
+// ── Turn Suggestion Engine ────────────────────────────────────────
+// Returns best tech suggestion for a given serviceId based on:
+// 1. Turn order from turnsTechOrder
+// 2. Who has fewest turns today
+// 3. Only techs that can perform this service (from staff profile)
+// 4. Only available techs (not on break, not currently in service)
+function suggestTechForService(serviceId) {
+  const order = getActiveTurnsOrder();
+  if (order.length === 0) return null;
+
+  const eligible = order.filter(id => {
+    const st = STAFF.find(s => s.id === id);
+    if (!st) return false;
+    if (turnsBreakStaff.includes(id)) return false;
+    if (st.services && st.services.length > 0) {
+      if (!st.services.includes(serviceId)) return false;
+    }
+    return getActiveTechEntries(id).length === 0; // available only
+  });
+
+  if (eligible.length === 0) return null;
+
+  // Fewest turns wins; turn-order position breaks ties
+  let best = null;
+  let bestTurns = Infinity;
+  let bestOrderIdx = Infinity;
+
+  eligible.forEach(id => {
+    const turns = getTechTurns(id);
+    const orderIdx = order.indexOf(id);
+    if (turns.total < bestTurns || (turns.total === bestTurns && orderIdx < bestOrderIdx)) {
+      best = id;
+      bestTurns = turns.total;
+      bestOrderIdx = orderIdx;
+    }
+  });
+
+  if (!best) return null;
+  const st = STAFF.find(s => s.id === best);
+  return { techId: best, techName: st?.name || '?' };
+}
+
+// Build suggestion map for all waiting customers
+// Returns { entryId: { serviceId: { techId, techName } } }
+function buildSuggestions() {
+  const suggestions = {};
+  queue.filter(e => e.status !== 'done').forEach(e => {
+    suggestions[e.id] = {};
+    e.services.forEach(sid => {
+      const a = (e.assignments || []).find(x => x.serviceId === sid);
+      const svcStatus = a ? getAssignmentStatus(e, a) : 'waiting';
+      if (svcStatus !== 'waiting') return; // only suggest for waiting services
+      if (a && a.techId) return; // already assigned
+      const suggestion = suggestTechForService(sid);
+      if (suggestion) suggestions[e.id][sid] = suggestion;
+    });
+  });
+  return suggestions;
+}
 function renderTurns() {
   renderTurnsTechGrid();
   renderTurnsQueue();
@@ -3798,16 +3943,14 @@ function renderTurnsTechGrid() {
   let activeCount = 0;
 
   if (order.length === 0) {
-    grid.innerHTML = '<div class="text-sm font-body text-on-surface-variant py-12 text-center opacity-60"><span class="material-symbols-outlined text-4xl block mb-3">swap_vert</span>No technicians added today.<br>Click <strong>Technicians</strong> to set up the turn order.</div>';
+    grid.innerHTML = '<div class="text-sm font-body text-on-surface-variant py-8 text-center opacity-60"><span class="material-symbols-outlined text-4xl block mb-2">swap_vert</span>No technicians added today.<br>Click <strong>Technicians</strong> to set up the turn order.</div>';
     const el = document.getElementById('turns-active-count'); if (el) el.textContent = '0';
     return;
   }
 
   const rows = order.map(staffId => {
     const st = STAFF.find(s => s.id === staffId);
-    if (!st) {
-      return '<div class="flex items-center border-b border-surface-container-high py-2 px-3 gap-2 opacity-50"><div class="w-[165px] flex-shrink-0 text-xs font-body text-outline italic">Staff not found (' + staffId.slice(0,12) + '...)</div></div>';
-    }
+    if (!st) return '<div class="flex items-center border-b border-surface-container-high py-1 px-3 gap-2 opacity-40 text-xs text-outline italic">Staff not found (' + staffId.slice(0,10) + ')</div>';
 
     const turns = getTechTurns(staffId);
     const allAssign = getTechAllAssignments(staffId);
@@ -3815,90 +3958,86 @@ function renderTurnsTechGrid() {
     const statusColor = getTechStatusColor(staffId);
 
     const photo = st.photo
-      ? '<img src="' + st.photo + '" class="w-11 h-11 rounded-full object-cover border-2 flex-shrink-0" style="border-color:' + statusColor.bg + '">'
-      : '<div class="w-11 h-11 rounded-full flex items-center justify-center border-2 flex-shrink-0 text-sm font-headline font-bold" style="background:' + statusColor.bg + '20;border-color:' + statusColor.bg + ';color:' + statusColor.bg + '">' + st.name.charAt(0).toUpperCase() + '</div>';
+      ? '<img src="' + st.photo + '" class="w-10 h-10 rounded-full object-cover border-2 flex-shrink-0" style="border-color:' + statusColor.bg + '">'
+      : '<div class="w-10 h-10 rounded-full flex items-center justify-center border-2 flex-shrink-0 text-sm font-headline font-bold" style="background:' + statusColor.bg + '20;border-color:' + statusColor.bg + ';color:' + statusColor.bg + '">' + st.name.charAt(0).toUpperCase() + '</div>';
 
-    const techCol = '<div class="flex items-center gap-2 w-[165px] flex-shrink-0 pr-2">' +
+    // Turn counter — larger, highlight yellow if half turn
+    const isHalfTurn = !Number.isInteger(turns.total) && turns.total > 0;
+    const turnDisplay = turns.total > 0
+      ? '<span class="text-sm font-headline font-bold ' + (isHalfTurn ? 'px-1.5 py-0.5 rounded-md' : '') + '" style="' + (isHalfTurn ? 'background:#f5c870;color:#3a2800' : 'color:' + statusColor.bg) + '">' + turns.total + 't</span>'
+      : '<span class="text-sm font-headline text-outline-variant">0t</span>';
+
+    const techCol = '<div class="flex items-center gap-2 w-[155px] flex-shrink-0 pr-2">' +
       '<button onclick="showTechStatusMenu(event,\'' + staffId + '\')" class="focus:outline-none flex-shrink-0">' + photo + '</button>' +
       '<div class="min-w-0">' +
-      '<div class="font-headline font-semibold text-on-surface text-sm truncate">' + st.name + '</div>' +
-      '<div class="mt-0.5"><span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style="background:' + statusColor.bg + ';color:' + statusColor.text + '">' + statusColor.label + '</span></div>' +
-      '<div class="text-[11px] font-body flex gap-1 mt-0.5"><span class="text-primary font-semibold">' + turns.total + 't</span>' +
-      (turns.bonus > 0 ? '<span class="text-secondary">+' + turns.bonus + 'b</span>' : '') +
+      '<div class="font-headline font-semibold text-on-surface text-sm truncate leading-tight">' + st.name + '</div>' +
+      '<div class="flex items-center gap-1.5 mt-0.5">' +
+      '<span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold leading-none" style="background:' + statusColor.bg + ';color:' + statusColor.text + '">' + statusColor.label + '</span>' +
+      turnDisplay +
+      (turns.bonus > 0 ? '<span class="text-[10px] text-secondary">+' + turns.bonus + 'b</span>' : '') +
       '</div></div></div>';
 
-    // Always: filled slots + 1 empty, minimum 5 total
     const MIN_SLOTS = 5;
     const totalSlots = Math.max(MIN_SLOTS, allAssign.length + 1);
     let turnCounter = 0;
 
     const slotHtml = Array.from({length: totalSlots}, (_, slotIdx) => {
-      const item = allAssign[slotIdx]; // undefined for empty slots
-
+      const item = allAssign[slotIdx];
       if (item) {
         const { entry: e, assignment: a } = item;
         const cost = a.cost || 0;
-        const isFull  = cost >= 28;
-        const isHalf  = cost >= 12 && cost < 28;
-        const isBonus = cost > 0 && cost < 12;
-        if (isFull)       turnCounter += 1;
-        else if (isHalf)  turnCounter += 0.5;
+        const _tt = classifyTurn(cost, a.serviceId||'');
+        const isFull = _tt==='full'; const isHalf = _tt==='half'; const isBonus = _tt==='bonus';
+        if (isFull) turnCounter += 1; else if (isHalf) turnCounter += 0.5;
         const turnLabelNum = Number.isInteger(turnCounter) ? turnCounter : turnCounter.toFixed(1);
-        const turnLabel = isBonus ? 'Bonus' : (cost === 0 ? 'Turn ?' : 'Turn ' + turnLabelNum);
+        const turnLabel = isBonus ? 'Bonus' : (cost === 0 ? '?' : '' + turnLabelNum);
 
         const svcStatus = getAssignmentStatus(e, a);
         let bg, fg;
-        if (svcStatus === 'done')      { bg = '#dde2e5'; fg = '#555'; }
-        else if (svcStatus === 'inservice') { bg = '#c8e6c5'; fg = '#1b5e20'; }
-        else                           { bg = '#ffe0b2'; fg = '#6d3200'; }
+        if (svcStatus === 'done')        { bg='#dde2e5'; fg='#555'; }
+        else if (svcStatus === 'inservice') { bg='#c8e6c5'; fg='#1b5e20'; }
+        else                             { bg='#ffe0b2'; fg='#6d3200'; }
 
-        const outlineStyle = e.groupId ? ';outline:3px solid ' + (e.groupColor || '#e8a230') + ';outline-offset:-1px' : '';
-        const svc     = SERVICES.find(s => s.id === a.serviceId);
-        const svcLabel = svc ? svc.label : (e.services.map(sid => { const sv = SERVICES.find(s => s.id === sid); return sv ? sv.label : '?'; }).join(', '));
-        const station  = a.station || '';
-        const costStr  = a.cost ? '$' + Number(a.cost).toFixed(0) : '';
-        const t        = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
-        const timeStr  = t.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        const groupDot = e.groupId ? '<span class="inline-block w-1.5 h-1.5 rounded-full mr-0.5 flex-shrink-0" style="background:' + (e.groupColor || '#888') + '"></span>' : '';
+        const outlineStyle = e.groupId ? ';outline:2px solid ' + (e.groupColor||'#e8a230') + ';outline-offset:-1px' : '';
+        const svc = SERVICES.find(s => s.id === a.serviceId);
+        const svcLabel = svc ? svc.label : (e.services.map(sid=>{const sv=SERVICES.find(s=>s.id===sid);return sv?sv.label:'?';}).join(', '));
+        const station = a.station || '';
+        const costStr = a.cost ? '$' + Number(a.cost).toFixed(0) : '';
+        const t = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
+        const timeStr = t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+        const groupDot = e.groupId ? '<span class="inline-block w-1.5 h-1.5 rounded-full mr-0.5 flex-shrink-0" style="background:'+(e.groupColor||'#888')+'"></span>' : '';
 
-        return '<div class="flex-shrink-0 w-[155px] px-1 turns-filled-slot" data-entry-id="' + e.id + '" data-tech-id="' + staffId + '" data-slot="' + slotIdx + '">' +
-          '<div class="text-[9px] font-headline font-bold text-center mb-0.5 select-none text-on-surface-variant">' + turnLabel + '</div>' +
-          '<button onclick="showGroupAssignModal(\'' + e.id + '\')" class="w-full rounded-xl px-2.5 py-1.5 text-left active:scale-95 transition-all text-xs font-body" style="background:' + bg + ';color:' + fg + ';min-height:78px' + outlineStyle + '">' +
-          '<div class="flex items-center gap-0.5 mb-0.5">' + groupDot + '<span class="font-semibold text-[11px] truncate">' + e.name + '</span></div>' +
-          '<div class="text-[10px] opacity-90 leading-tight">' + svcLabel + (station ? ' · ' + station : '') + (costStr ? ' · ' + costStr : '') + '</div>' +
-          '<div class="text-[9px] opacity-60 mt-0.5">' + timeStr + (e.phone ? ' · ' + e.phone : '') + '</div>' +
+        return '<div class="flex-shrink-0 w-[150px] px-1 turns-filled-slot" data-entry-id="'+e.id+'" data-tech-id="'+staffId+'" data-slot="'+slotIdx+'">' +
+          '<button onclick="showGroupAssignModal(\''+e.id+'\')" class="w-full rounded-xl px-2 py-1.5 text-left active:scale-95 transition-all text-xs font-body" style="background:'+bg+';color:'+fg+';min-height:66px'+outlineStyle+'">' +
+          '<div class="flex items-center justify-between gap-0.5 mb-0.5">' +
+            '<div class="flex items-center gap-0.5 min-w-0">'+groupDot+'<span class="font-semibold text-[11px] truncate">'+e.name+'</span></div>' +
+            (turnLabel ? '<span class="text-[11px] font-headline font-bold flex-shrink-0 ml-1" style="opacity:0.75">'+turnLabel+'</span>' : '') +
+          '</div>' +
+          '<div class="text-[10px] opacity-90 leading-tight">'+svcLabel+(station?' · '+station:'')+(costStr?' · '+costStr:'')+'</div>' +
+          '<div class="text-[9px] opacity-60">'+timeStr+(e.phone?' · '+e.phone:'')+'</div>' +
           '</button></div>';
-
       } else {
-        // Empty slot — no label, just the + button
-        return '<div class="flex-shrink-0 w-[155px] px-1 turns-drop-zone" data-tech-id="' + staffId + '" data-slot="' + slotIdx + '">' +
-          '<div class="text-[9px] mb-0.5 opacity-0 select-none">-</div>' +
-          '<div class="turns-empty-slot w-full rounded-xl border-2 border-dashed border-outline-variant/40 flex items-center justify-center text-outline-variant cursor-pointer hover:border-primary hover:bg-primary/5 hover:text-primary transition-all" style="min-height:78px" onclick="openTurnsAssign(\'' + staffId + '\',' + slotIdx + ')">' +
-          '<span class="material-symbols-outlined" style="font-size:22px">add</span></div></div>';
+        return '<div class="flex-shrink-0 w-[150px] px-1 turns-drop-zone" data-tech-id="'+staffId+'" data-slot="'+slotIdx+'">' +
+          '<div class="turns-empty-slot w-full rounded-xl border-2 border-dashed border-outline-variant/40 flex items-center justify-center text-outline-variant cursor-pointer hover:border-primary hover:bg-primary/5 hover:text-primary transition-all" style="min-height:66px" onclick="openTurnsAssign(\''+staffId+'\','+slotIdx+')">' +
+          '<span class="material-symbols-outlined" style="font-size:20px">add</span></div></div>';
       }
     }).join('');
 
-    // Slot container — horizontal scroll, wheel handled via JS (not inline to avoid passive event issue)
-    return '<div class="flex items-center border-b border-surface-container-high py-3 gap-2">' +
+    return '<div class="flex items-center border-b border-surface-container-high py-2 gap-2">' +
       techCol +
-      '<div class="turns-slot-row flex gap-2 overflow-x-auto pb-1" style="min-width:0;flex:1;scrollbar-width:thin">' +
+      '<div class="turns-slot-row flex gap-1.5 overflow-x-auto pb-0.5" style="min-width:0;flex:1;scrollbar-width:thin">' +
       slotHtml + '</div></div>';
   }).filter(Boolean).join('');
 
-  grid.innerHTML = rows || '<div class="text-sm font-body text-on-surface-variant py-4 text-center">No active technicians.</div>';
+  grid.innerHTML = rows || '<div class="text-sm text-on-surface-variant py-4 text-center">No active technicians.</div>';
   const el = document.getElementById('turns-active-count'); if (el) el.textContent = activeCount;
 
-  // Attach wheel scroll to slot rows (passive-safe: only scroll left, don't prevent default when at limits)
   grid.querySelectorAll('.turns-slot-row').forEach(row => {
-    row.addEventListener('wheel', (e) => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        // Only hijack vertical scroll if the row actually has overflow
-        if (row.scrollWidth > row.clientWidth) {
-          row.scrollLeft += e.deltaY;
-          e.preventDefault();
-        }
+    row.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && row.scrollWidth > row.clientWidth) {
+        row.scrollLeft += e.deltaY; e.preventDefault();
       }
-    }, { passive: false });
+    }, {passive:false});
   });
 
   setupTurnsDragDrop();
@@ -3909,8 +4048,6 @@ function renderTurnsQueue() {
   const activeList  = document.getElementById('turns-active-list');
   if (!waitingList || !activeList) return;
 
-  // Waiting: entries where at least one service is still waiting
-  // Active: entries where at least one service is inservice
   const waiting   = queue.filter(e => {
     if (e.status === 'done') return false;
     if (!e.assignments || e.assignments.length === 0) return e.status === 'waiting';
@@ -3920,64 +4057,68 @@ function renderTurnsQueue() {
     if (!e.assignments || e.assignments.length === 0) return e.status === 'inservice';
     return e.assignments.some(a => getAssignmentStatus(e, a) === 'inservice');
   });
+
   const wLabel = document.getElementById('turns-waiting-label');
   const aLabel = document.getElementById('turns-active-label');
   if (wLabel) wLabel.textContent = waiting.length + ' in queue';
   if (aLabel) aLabel.textContent = inservice.length + ' in service';
 
+  // Build suggestion map for waiting customers
+  const suggestions = buildSuggestions();
+
   function buildCard(e, draggable) {
     const t = e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime);
-    const timeStr = t.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    const groupDot = e.groupId ? '<span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:' + (e.groupColor||'') + '"></span>' : '';
-    const groupLbl = e.groupLabel ? '<div class="text-[10px] font-body italic" style="color:' + (e.groupColor||'#888') + '">' + e.groupLabel + '</div>' : '';
+    const timeStr = t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const groupDot = e.groupId ? '<span class="inline-block w-2 h-2 rounded-full flex-shrink-0" style="background:'+(e.groupColor||'')+'"></span>' : '';
+    const groupLbl = e.groupLabel ? '<span class="text-[10px] font-body italic ml-0.5" style="color:'+(e.groupColor||'#888')+'">'+e.groupLabel+'</span>' : '';
     const avatar = e.groupId
-      ? '<div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-headline font-bold" style="background:' + e.groupColor + '20;color:' + e.groupColor + ';border:2px solid ' + e.groupColor + '">' + e.name.charAt(0).toUpperCase() + '</div>'
-      : '<div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0"><span class="text-sm font-headline font-bold text-primary">' + e.name.charAt(0).toUpperCase() + '</span></div>';
+      ? '<div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-headline font-bold" style="background:'+e.groupColor+'20;color:'+e.groupColor+';border:2px solid '+e.groupColor+'">'+e.name.charAt(0).toUpperCase()+'</div>'
+      : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0"><span class="text-xs font-headline font-bold text-primary">'+e.name.charAt(0).toUpperCase()+'</span></div>';
 
-    // Assignment info — show for both waiting and inservice
-    // If assigned: show "Service → Tech @ Station · $Cost" (no duplicate badge)
-    // If no assignment: show service badges
+    // Assignment / suggestion info
     const assignments = (e.assignments||[]).filter(a => a.techId || a.serviceId);
+    const entrySuggestions = suggestions[e.id] || {};
     let serviceContent;
     if (assignments.length > 0) {
       serviceContent = assignments.map(a => {
         const tech = STAFF.find(s=>s.id===a.techId);
         const svc  = SERVICES.find(s=>s.id===a.serviceId);
-        const parts = [];
-        if (svc)       parts.push(svc.label);
-        if (tech)      parts.push('→ ' + tech.name);
-        if (a.station) parts.push('@ ' + a.station);
-        if (a.cost)    parts.push('$' + a.cost);
-        return '<div class="text-[10px] text-on-surface-variant mt-0.5">' + parts.join(' ') + '</div>';
+        const svcStatus = getAssignmentStatus(e, a);
+        const dot = svcStatus==='done'?'✓ ':svcStatus==='inservice'?'● ':'○ ';
+        const parts = [dot + (svc?svc.label:'')];
+        if (tech) parts.push('→ '+tech.name);
+        else if (entrySuggestions[a.serviceId]) parts.push('→ '+entrySuggestions[a.serviceId].techName+'?');
+        if (a.cost) parts.push('$'+a.cost);
+        return '<div class="text-[10px] text-on-surface-variant leading-tight">'+parts.join(' ')+'</div>';
       }).join('');
     } else {
-      // No assignment yet — show plain service badges
-      serviceContent = '<div class="flex gap-1 mt-0.5 flex-wrap">' +
-        e.services.map(sid => {
-          const s = SERVICES.find(x=>x.id===sid);
-          return '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container font-body">' + (s?s.label:sid) + '</span>';
-        }).join('') + '</div>';
+      // No assignments yet — show services with suggestions
+      serviceContent = e.services.map(sid => {
+        const svc = SERVICES.find(s=>s.id===sid);
+        const sug = entrySuggestions[sid];
+        return '<div class="text-[10px] text-on-surface-variant leading-tight">○ '+(svc?svc.label:sid)+(sug?' <span class="font-semibold" style="color:#1a5252">→ '+sug.techName+'?</span>':'')+'</div>';
+      }).join('');
     }
 
-    // Clear visual distinction: waiting = amber left + warm bg, active = green left + cool bg
-    const borderColor = e.status === 'inservice' ? '#2a7a4f' : '#d4860a';
-    const bgTint = e.status === 'inservice' ? 'rgba(200,230,197,0.25)' : 'rgba(255,224,178,0.25)';
-    return '<div class="px-4 py-3 ' + (draggable?'cursor-grab ':'cursor-pointer ') + 'hover:brightness-95 transition-all select-none border-b border-surface-container-high border-l-4" style="border-left-color:' + borderColor + ';background:' + bgTint + '" data-entry-id="' + e.id + '" onclick="showGroupAssignModal(\'' + e.id + '\')">' +
+    const borderColor = e.status==='inservice' ? '#2a7a4f' : '#d4860a';
+    const bgTint      = e.status==='inservice' ? 'rgba(200,230,197,0.25)' : 'rgba(255,224,178,0.25)';
+    return '<div class="px-3 py-2 '+(draggable?'cursor-grab ':'cursor-pointer ')+'hover:brightness-95 transition-all select-none border-b border-surface-container-high border-l-4" style="border-left-color:'+borderColor+';background:'+bgTint+'" data-entry-id="'+e.id+'" onclick="showGroupAssignModal(\''+e.id+'\')">' +
       '<div class="flex items-start gap-2 pointer-events-none">' + avatar +
       '<div class="min-w-0 flex-grow">' +
-      '<div class="flex items-center gap-1.5 flex-wrap">' + groupDot + '<span class="font-headline font-semibold text-on-surface text-sm">' + e.name + '</span>' +
-      '<span class="text-[11px] font-body text-on-surface-variant">' + timeStr + '</span></div>' +
-      groupLbl + serviceContent +
-      (e.phone ? '<div class="text-[10px] font-body text-outline mt-0.5">' + e.phone + '</div>' : '') +
+      '<div class="flex items-center gap-1 flex-wrap leading-tight">' + groupDot +
+      '<span class="font-headline font-semibold text-on-surface text-sm">'+e.name+'</span>' + groupLbl +
+      '<span class="text-[10px] font-body text-on-surface-variant ml-1">'+timeStr+'</span></div>' +
+      serviceContent +
+      (e.phone?'<div class="text-[10px] text-outline">'+e.phone+'</div>':'') +
       '</div></div></div>';
   }
 
   waitingList.innerHTML = waiting.length === 0
-    ? '<div class="px-4 py-3 text-xs font-body text-on-surface-variant text-center">No one waiting</div>'
+    ? '<div class="px-4 py-3 text-xs text-on-surface-variant text-center">No one waiting</div>'
     : waiting.map(e => buildCard(e, true)).join('');
 
   activeList.innerHTML = inservice.length === 0
-    ? '<div class="px-4 py-3 text-xs font-body text-on-surface-variant text-center">No one in service</div>'
+    ? '<div class="px-4 py-3 text-xs text-on-surface-variant text-center">No one in service</div>'
     : inservice.map(e => buildCard(e, true)).join('');
 
   setupTurnsDragDrop();
@@ -4281,6 +4422,7 @@ async function pushQueueToSheets() {
   if (!squareConfig) return;
   setSheetsIndicator('syncing');
   try {
+    const now = new Date().toISOString();
     const res = await fetch(SHEETS_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4295,7 +4437,8 @@ async function pushQueueToSheets() {
     });
     const data = await res.json();
     if (data.success) {
-      _lastSheetsUpdate = new Date().toISOString();
+      // Use server's timestamp — authoritative across all devices
+      _lastSheetsUpdate = data.updatedAt || now;
       setSheetsIndicator('ok');
     } else throw new Error(data.error || 'Save failed');
   } catch(err) {
@@ -4327,15 +4470,17 @@ async function pollSheets() {
   _isSyncing = true;
   try {
     const result = await loadQueueFromSheets();
-    if (!result) return;
+    if (!result) { _isSyncing = false; return; }
 
-    // Only update if the Sheets version is newer and came from a different device
-    if (result.updatedAt &&
-        result.device !== DEVICE_ID &&
-        result.updatedAt !== _lastSheetsUpdate) {
+    // Accept Sheets data if it's newer than what we last saw
+    // Use updatedAt timestamp as the version indicator
+    const sheetsTime = result.updatedAt ? new Date(result.updatedAt).getTime() : 0;
+    const localTime  = _lastSheetsUpdate ? new Date(_lastSheetsUpdate).getTime() : 0;
+
+    if (sheetsTime > localTime) {
       _lastSheetsUpdate = result.updatedAt;
       queue = result.queue;
-      saveQueueToStorage(); // cache locally
+      saveQueueToStorage();
       renderQueue();
       updateStats();
       renderTurns();
@@ -4469,6 +4614,45 @@ function renderSettingsPanel() {
   renderSettingsActiveStaff();
   const lbl = document.getElementById('last-backup-label');
   if (lbl) lbl.textContent = localStorage.getItem('muse_last_backup') || 'Never';
+  // Populate threshold inputs
+  const cfg = getTurnConfig();
+  const fi = document.getElementById('thresh-full');
+  const hi = document.getElementById('thresh-half');
+  if (fi) fi.value = cfg.fullMin;
+  if (hi) hi.value = cfg.halfMin;
+  renderBonusServicesList();
+}
+
+function saveTurnThresholds() {
+  const fullMin = parseInt(document.getElementById('thresh-full')?.value) || 28;
+  const halfMin = parseInt(document.getElementById('thresh-half')?.value) || 12;
+  if (halfMin >= fullMin) { showToast('Half min must be less than full min.'); return; }
+  saveTurnConfig({ fullMin, halfMin });
+  showToast('Turn thresholds saved ✓');
+}
+
+function renderBonusServicesList() {
+  const el = document.getElementById('bonus-services-list');
+  if (!el) return;
+  const bonusIds = JSON.parse(localStorage.getItem('muse_bonus_services') || '[]');
+  el.innerHTML = SERVICES.map(s => {
+    const isBonus = bonusIds.includes(s.id);
+    return `<label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-surface-container transition-colors ${isBonus ? 'bg-primary/10 border border-primary/30' : 'border border-transparent'}">
+      <input type="checkbox" class="w-4 h-4 accent-primary" ${isBonus ? 'checked' : ''} onchange="toggleBonusService('${s.id}', this.checked)">
+      <span class="font-body font-semibold text-on-surface text-sm">${s.label}</span>
+      <span class="text-[10px] font-body text-outline">${s.abbr}</span>
+      ${isBonus ? '<span class="ml-auto text-[10px] font-semibold text-primary">Always Bonus</span>' : ''}
+    </label>`;
+  }).join('');
+}
+
+function toggleBonusService(serviceId, checked) {
+  const ids = JSON.parse(localStorage.getItem('muse_bonus_services') || '[]');
+  if (checked && !ids.includes(serviceId)) ids.push(serviceId);
+  else if (!checked) { const i = ids.indexOf(serviceId); if (i > -1) ids.splice(i,1); }
+  saveBonusServices(ids);
+  renderBonusServicesList();
+  showToast(checked ? 'Marked as always bonus ✓' : 'Removed from always bonus');
 }
 
 // ── First-Time Setup Wizard ───────────────────────
