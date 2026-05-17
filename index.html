@@ -278,7 +278,7 @@ tailwind.config = {
 <!-- ═══════════════════════════════════════════════
      SCREEN 3: CONFIRMATION (Customer-Facing)
 ═══════════════════════════════════════════════ -->
-<div id="screen-confirm" class="screen flex-col items-center justify-center text-center px-8 py-16" onclick="clearTimeout(window._confirmResetTimer); goTo('screen-welcome')">
+<div id="screen-confirm" class="screen flex-col items-center justify-center text-center px-8 py-16">
   <div class="fade-up">
     <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-6">
       <span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings:'FILL' 1,'wght' 400">check_circle</span>
@@ -641,7 +641,30 @@ tailwind.config = {
           <p class="text-sm font-body text-on-surface-variant mt-0.5">Configure app behavior and customer-facing options</p>
         </div>
 
-        <!-- Data Backup & Restore -->
+        <!-- Square Connection -->
+        <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high mb-3 overflow-hidden">
+          <button onclick="toggleSettingsSection('square-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
+            <div class="text-left">
+              <div class="font-headline font-bold text-on-surface">Square Connection</div>
+              <div class="text-xs font-body text-on-surface-variant mt-0.5" id="settings-square-status">
+                ${squareConfig ? '✓ Connected — Location: ' + squareConfig.locationId : 'Not connected'}
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform" id="square-section-icon">expand_more</span>
+          </button>
+          <div id="square-section" class="hidden px-5 pb-5 border-t border-surface-container-high pt-4 space-y-3">
+            <div>
+              <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Square Location ID</label>
+              <input id="settings-location-id" type="text"
+                value="${squareConfig?.locationId || ''}"
+                placeholder="e.g. L01VG1HJ5WMJD"
+                class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-3 text-base font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+            </div>
+            <button onclick="saveSquareFromSettings()" class="w-full bg-primary text-on-primary py-3 rounded-xl font-headline font-bold transition-all active:scale-95 hover:bg-primary-dim">
+              Save & Connect
+            </button>
+          </div>
+        </div>
         <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high mb-3 overflow-hidden">
           <button onclick="toggleSettingsSection('backup-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
             <div class="text-left">
@@ -1175,8 +1198,35 @@ tailwind.config = {
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     TOAST
+     FIRST-TIME SETUP WIZARD (shows if not configured)
 ═══════════════════════════════════════════════ -->
+<div id="setup-wizard" class="fixed inset-0 z-[200] hidden items-center justify-center bg-on-surface/70">
+  <div class="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl mx-4">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-on-primary" style="font-size:32px">store</span>
+      </div>
+      <h2 class="text-2xl font-headline font-bold text-on-surface">Welcome to Muse</h2>
+      <p class="text-sm font-body text-on-surface-variant mt-2">One-time setup — enter your Square Location ID to connect.</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Square Location ID</label>
+        <input id="setup-location-id" type="text" placeholder="e.g. L01VG1HJ5WMJD"
+          class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-3 text-base font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
+        <p class="text-xs font-body text-on-surface-variant mt-1">Find this in Square Dashboard → Locations</p>
+      </div>
+      <button onclick="completeSetup()" class="w-full bg-primary hover:bg-primary-dim text-on-primary py-4 rounded-xl font-headline font-bold text-base transition-all active:scale-95">
+        Connect & Start
+      </button>
+      <button onclick="skipSetup()" class="w-full text-on-surface-variant text-sm font-body py-2 hover:text-on-surface transition-colors">
+        Skip for now (Square features disabled)
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] hidden">
   <div class="bg-on-surface text-surface px-5 py-3 rounded-xl text-sm font-body font-medium shadow-2xl fade-up" id="toast-text"></div>
 </div>
@@ -1283,6 +1333,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Confirm screen: tap anywhere to reset (works on iOS/Android touch screens)
+  const confirmScreen = document.getElementById('screen-confirm');
+  if (confirmScreen) {
+    const resetToWelcome = () => {
+      clearTimeout(window._confirmResetTimer);
+      goTo('screen-welcome');
+    };
+    confirmScreen.addEventListener('click', resetToWelcome);
+    confirmScreen.addEventListener('touchend', e => {
+      e.preventDefault(); // prevent ghost click on iOS
+      resetToWelcome();
+    });
+  }
+
   setLogo();
   startClock();
   renderGuestsContainer();
@@ -1294,8 +1358,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else updateSyncLabel('pending', 'Square not connected');
 
   setTimeout(() => {
-    if (!squareConfig) showSquareModal();
-  }, 1500);
+    if (!squareConfig && !sessionStorage.getItem('muse_setup_skipped')) showSetupWizard();
+  }, 800);
 
   scheduleMidnightReset();
 
@@ -2402,27 +2466,25 @@ function submitManualAdd() {
 // ── Google Sheets Export ──────────────────────────
 async function exportToSheets(entry) {
   try {
-    const row = {
-      action: 'append',
-      entryId: String(entry.id),
-      timestamp: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toLocaleString(),
-      name: entry.name,
-      phone: entry.phone || '',
-      services: entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
-      type: entry.isAppointment ? 'Appointment' : 'Walk-In',
-      status: entry.status,
-      staff: '',
-      stations: '',
-      detail: '',
-      total: '',
-      loggedBy: activeUser ? activeUser.name : '',
-      sheetId: SHEETS_ID,
+    const payload = {
+      action:      'append',
+      entryId:     String(entry.id),
+      checkinTime: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toISOString(),
+      name:        entry.name,
+      phone:       entry.phone || '',
+      services:    entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
+      type:        entry.isAppointment ? 'Appointment' : 'Walk-In',
+      status:      entry.status || 'waiting',
+      staff:       '',
+      stations:    '',
+      detail:      '',
+      total:       0,
+      loggedBy:    activeUser ? activeUser.name : 'Customer',
     };
-    // Route through proxy — same as updateSheetsRow
     await fetch(`${SQUARE_PROXY.replace('/square', '')}/sheets`, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(row),
+      body:    JSON.stringify(payload),
     });
   } catch(e) {
     console.warn('Sheets export failed:', e);
@@ -2457,20 +2519,19 @@ async function updateSheetsRow(entry) {
     }).filter(Boolean).join(', ');
 
     const payload = {
-      action: 'update',
-      entryId: String(entry.id),
-      timestamp: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toLocaleString(),
-      name: entry.name,
-      phone: entry.phone || '',
-      services: entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
-      type: entry.isAppointment ? 'Appointment' : 'Walk-In',
-      status: entry.status,
-      staff: staffDetail,
-      stations: (entry.assignments || []).map(a => a.station).filter(Boolean).join(', '),
-      detail: assignDetail,
-      total: entry.totalCost ? `$${Number(entry.totalCost).toFixed(2)}` : '',
-      loggedBy: activeUser ? activeUser.name : '',
-      sheetId: SHEETS_ID,
+      action:      'update',
+      entryId:     String(entry.id),
+      checkinTime: (entry.checkinTime instanceof Date ? entry.checkinTime : new Date(entry.checkinTime)).toISOString(),
+      name:        entry.name,
+      phone:       entry.phone || '',
+      services:    entry.services.map(sid => SERVICES.find(s => s.id === sid)?.label || sid).join(', '),
+      type:        entry.isAppointment ? 'Appointment' : 'Walk-In',
+      status:      entry.status,
+      staff:       staffDetail,
+      stations:    (entry.assignments || []).map(a => a.station).filter(Boolean).join(', '),
+      detail:      assignDetail,
+      total:       entry.totalCost ? Number(entry.totalCost) : 0,
+      loggedBy:    activeUser ? activeUser.name : '',
     };
 
     // Route through our Cloudflare proxy to avoid CORS issues
@@ -4339,6 +4400,55 @@ function renderSettingsPanel() {
   renderSettingsActiveStaff();
   const lbl = document.getElementById('last-backup-label');
   if (lbl) lbl.textContent = localStorage.getItem('muse_last_backup') || 'Never';
+}
+
+// ── First-Time Setup Wizard ───────────────────────
+function saveSquareFromSettings() {
+  const locationId = document.getElementById('settings-location-id')?.value.trim();
+  if (!locationId) { showToast('Please enter a Location ID.'); return; }
+  squareConfig = { locationId };
+  localStorage.setItem('muse_sq_config', JSON.stringify(squareConfig));
+  updateSyncLabel('ok', 'Square synced');
+  const status = document.getElementById('settings-square-status');
+  if (status) status.textContent = '✓ Connected — Location: ' + locationId;
+  loadSquareCustomers();
+  showToast('Square connected ✓');
+}
+
+function showSetupWizard() {
+  const wizard = document.getElementById('setup-wizard');
+  if (!wizard) return;
+  wizard.classList.remove('hidden');
+  wizard.style.display = 'flex';
+  setTimeout(() => document.getElementById('setup-location-id')?.focus(), 300);
+}
+
+function hideSetupWizard() {
+  const wizard = document.getElementById('setup-wizard');
+  if (!wizard) return;
+  wizard.classList.add('hidden');
+  wizard.style.display = '';
+}
+
+function completeSetup() {
+  const locationId = document.getElementById('setup-location-id')?.value.trim();
+  if (!locationId) {
+    showToast('Please enter your Square Location ID.');
+    return;
+  }
+  squareConfig = { locationId };
+  localStorage.setItem('muse_sq_config', JSON.stringify(squareConfig));
+  updateSyncLabel('ok', 'Square synced');
+  hideSetupWizard();
+  loadSquareCustomers();
+  showToast('Connected to Square ✓');
+}
+
+function skipSetup() {
+  // Mark as skipped so wizard doesn't show again this session
+  sessionStorage.setItem('muse_setup_skipped', '1');
+  hideSetupWizard();
+  showToast('Running without Square. You can connect later in Settings.');
 }
 
 async function squarePullStaff() {
