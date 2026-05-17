@@ -331,24 +331,6 @@ tailwind.config = {
     <div class="flex items-center gap-4">
       <!-- Logo -->
       <img id="logo-desk" src="" alt="Muse" class="h-10 w-auto object-contain" style="filter: none;" onerror="this.style.display='none'">
-      <!-- Compact stats inline with logo -->
-      <div class="flex items-center gap-3 pl-2 border-l border-surface-container-high">
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-secondary-container border border-secondary"></div>
-          <span class="text-sm font-headline font-bold text-on-surface" id="stat-waiting">0</span>
-          <span class="text-[10px] font-body text-on-surface-variant uppercase tracking-wider">Waiting</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-primary-container border border-primary"></div>
-          <span class="text-sm font-headline font-bold text-on-surface" id="stat-inservice">0</span>
-          <span class="text-[10px] font-body text-on-surface-variant uppercase tracking-wider">In Service</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-surface-container-high border border-outline-variant"></div>
-          <span class="text-sm font-headline font-bold text-on-surface" id="stat-done">0</span>
-          <span class="text-[10px] font-body text-on-surface-variant uppercase tracking-wider">Done</span>
-        </div>
-      </div>
     </div>
     <!-- Top nav tabs -->
     <nav class="flex items-center gap-1">
@@ -481,10 +463,10 @@ tailwind.config = {
         </div>
 
         <!-- Summary cards -->
-        <div class="grid grid-cols-3 gap-3 mb-5">
+        <div class="grid grid-cols-3 gap-3 mb-3">
           <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
             <div class="text-2xl font-headline font-extrabold text-primary" id="rpt-total-income">$0.00</div>
-            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Total Income</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Total Billed</div>
           </div>
           <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
             <div class="text-2xl font-headline font-extrabold text-on-surface" id="rpt-total-guests">0</div>
@@ -493,6 +475,16 @@ tailwind.config = {
           <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
             <div class="text-2xl font-headline font-extrabold text-on-surface" id="rpt-avg-ticket">$0.00</div>
             <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Avg Ticket</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="rounded-xl p-4 border text-center" style="background:rgba(26,82,82,0.08);border-color:rgba(26,82,82,0.3)">
+            <div class="text-2xl font-headline font-extrabold" style="color:#1a5252" id="rpt-shop-keeps">$0.00</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Shop Keeps</div>
+          </div>
+          <div class="rounded-xl p-4 border text-center" style="background:rgba(255,224,178,0.3);border-color:rgba(212,134,10,0.4)">
+            <div class="text-2xl font-headline font-extrabold" style="color:#a05000" id="rpt-total-commission">$0.00</div>
+            <div class="text-[11px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Commission Owed</div>
           </div>
         </div>
 
@@ -734,9 +726,7 @@ tailwind.config = {
           <button onclick="toggleSettingsSection('square-section')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-container transition-colors">
             <div class="text-left">
               <div class="font-headline font-bold text-on-surface">Square Connection</div>
-              <div class="text-xs font-body text-on-surface-variant mt-0.5" id="settings-square-status">
-                ${squareConfig ? '✓ Connected — Location: ' + squareConfig.locationId : 'Not connected'}
-              </div>
+              <div class="text-xs font-body text-on-surface-variant mt-0.5" id="settings-square-status">Checking…</div>
             </div>
             <span class="material-symbols-outlined text-on-surface-variant transition-transform" id="square-section-icon">expand_more</span>
           </button>
@@ -744,7 +734,6 @@ tailwind.config = {
             <div>
               <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Square Location ID</label>
               <input id="settings-location-id" type="text"
-                value="${squareConfig?.locationId || ''}"
                 placeholder="e.g. L01VG1HJ5WMJD"
                 class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-3 text-base font-headline text-on-surface focus:border-primary transition-colors placeholder:text-outline-variant outline-none">
             </div>
@@ -1541,34 +1530,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Load from localStorage instantly (offline fallback)
   queue = loadQueueFromStorage();
 
-  // 2. Sheets is always the authority — fetch and replace local
-  if (squareConfig) {
-    setSheetsIndicator('syncing');
+  // Start Sheets polling immediately on load — works on both customer and dashboard screens
+  startSheetsPolling();
 
-    // Sync config (staff, services, schedule) from Sheets first
-    // This ensures all devices share the same setup
+  // 2. Sheets is always the authority — fetch and replace local
+  setSheetsIndicator('syncing');
+
+  // Sync config (staff, services, schedule) from Sheets first
+  if (squareConfig) {
     const configChanged = await loadConfigFromSheets();
     if (configChanged) {
-      // Reload in-memory arrays from updated localStorage
       const staffRaw    = localStorage.getItem('muse_staff');
       const servicesRaw = localStorage.getItem('muse_services');
-      if (staffRaw)    { const s = JSON.parse(staffRaw);    if (s.length)    STAFF    = s; }
-      if (servicesRaw) { const s = JSON.parse(servicesRaw); if (s.length)    SERVICES = s; }
+      if (staffRaw)    { const s = JSON.parse(staffRaw);    if (s.length) STAFF    = s; }
+      if (servicesRaw) { const s = JSON.parse(servicesRaw); if (s.length) SERVICES = s; }
     }
-
-    const result = await loadQueueFromSheets();
-    if (result && result.queue.length > 0) {
-      queue = result.queue;
-      _lastSheetsUpdate = result.updatedAt;
-      saveQueueToStorage();
-      setSheetsIndicator('ok');
-    } else {
-      setSheetsIndicator('ok');
-    }
-    startSheetsPolling();
-    startElapsedTimer();
-    setTimeout(() => pushConfigToSheets(), 3000);
   }
+
+  const result = await loadQueueFromSheets();
+  if (result && result.queue.length > 0) {
+    queue = result.queue;
+    _lastSheetsUpdate = result.updatedAt;
+    saveQueueToStorage();
+  }
+  setSheetsIndicator('ok');
+  startElapsedTimer();
+  if (squareConfig) setTimeout(() => pushConfigToSheets(), 3000);
+
   updateLoggedInDisplay();
 
   // Confirm screen: tap anywhere to reset (works on iOS/Android)
@@ -2960,15 +2948,23 @@ function runReport() {
   });
   const staffBreakdown = document.getElementById('rpt-staff-breakdown');
   const staffEntries = Object.entries(staffMap).sort((a,b) => b[1].income - a[1].income);
+
+  // Compute totals for top summary cards
+  const totalComm = staffEntries.reduce((sum, [techId, data]) => {
+    const tech = STAFF.find(s => s.id === techId);
+    if (tech?.commission != null) return sum + (data.income * tech.commission / 100);
+    return sum;
+  }, 0);
+  const shopKeeps = totalIncome - totalComm;
+
+  const shopEl  = document.getElementById('rpt-shop-keeps');
+  const commEl  = document.getElementById('rpt-total-commission');
+  if (shopEl)  shopEl.textContent  = `$${shopKeeps.toFixed(2)}`;
+  if (commEl)  commEl.textContent  = `$${totalComm.toFixed(2)}`;
+
   if (staffEntries.length === 0) {
     staffBreakdown.innerHTML = '<p class="text-sm font-body text-on-surface-variant py-2">No assigned services in this period.</p>';
   } else {
-    // Summary row: total commission owed
-    const totalComm = staffEntries.reduce((sum, [techId, data]) => {
-      const tech = STAFF.find(s => s.id === techId);
-      if (tech?.commission != null) return sum + (data.income * tech.commission / 100);
-      return sum;
-    }, 0);
 
     const summaryBar = `
       <div class="bg-primary/10 rounded-xl px-5 py-3 border border-primary/30 flex items-center justify-between mb-3">
@@ -5054,7 +5050,7 @@ function scheduleSheetsSave() {
 
 // Push full queue to Sheets
 async function pushQueueToSheets() {
-  if (!squareConfig) return;
+  // Always try to push — squareConfig is only needed for Square API, not Sheets sync
   setSheetsIndicator('syncing');
   try {
     const now = new Date().toISOString();
@@ -5072,7 +5068,6 @@ async function pushQueueToSheets() {
     });
     const data = await res.json();
     if (data.success) {
-      // Use server's timestamp — authoritative across all devices
       _lastSheetsUpdate = data.updatedAt || now;
       setSheetsIndicator('ok');
     } else throw new Error(data.error || 'Save failed');
@@ -5084,9 +5079,7 @@ async function pushQueueToSheets() {
 
 // Load queue from Sheets — used on startup and by poller
 async function loadQueueFromSheets() {
-  if (!squareConfig) return null;
   try {
-    // Add cache-busting timestamp to prevent Cloudflare caching GET responses
     const res  = await fetch(`${SHEETS_PROXY}?action=loadQueue&_=${Date.now()}`);
     const data = await res.json();
     if (data.success) {
@@ -5102,7 +5095,7 @@ async function loadQueueFromSheets() {
 
 // Poll Sheets for updates from other devices
 async function pollSheets() {
-  if (!squareConfig || _isSyncing) return;
+  if (_isSyncing) return;
   _isSyncing = true;
   try {
     const result = await loadQueueFromSheets();
@@ -5252,7 +5245,14 @@ function renderSettingsPanel() {
   renderSettingsActiveStaff();
   const lbl = document.getElementById('last-backup-label');
   if (lbl) lbl.textContent = localStorage.getItem('muse_last_backup') || 'Never';
-  // Populate threshold inputs
+
+  // Square connection status
+  const sqStatus = document.getElementById('settings-square-status');
+  const sqInput  = document.getElementById('settings-location-id');
+  if (sqStatus) sqStatus.textContent = squareConfig ? `✓ Connected — Location: ${squareConfig.locationId}` : 'Not connected';
+  if (sqInput && squareConfig?.locationId) sqInput.value = squareConfig.locationId;
+
+  // Turn thresholds
   const cfg = getTurnConfig();
   const fi = document.getElementById('thresh-full');
   const hi = document.getElementById('thresh-half');
@@ -5468,6 +5468,33 @@ function saveEditCheckin() {
   }
   entry.status = deriveEntryStatus(entry);
 
+  // Also update any group members that share the same contact (same phone)
+  if (entry.groupId) {
+    queue.filter(e => e.groupId === entry.groupId && String(e.id) !== String(_editCheckinId)).forEach(member => {
+      // Only sync phone — other members have their own names
+    });
+  }
+
+  // Update Square customer record if we have a match
+  if (squareConfig && phone) {
+    const match = customerDirectory.find(c => c.phone && c.phone.replace(/\D/g,'').endsWith(phone.replace(/\D/g,'')));
+    if (match) {
+      match.firstName = first;
+      match.lastName  = last;
+      match.phone     = phone;
+      localStorage.setItem('muse_customers', JSON.stringify(customerDirectory));
+      // Push to Square silently
+      fetch(`${SQUARE_PROXY}/v2/customers/${match.squareId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ given_name: first, family_name: last, phone_number: phone }),
+      }).catch(() => {});
+      // Also update squareCustomers autocomplete cache
+      const sc = squareCustomers.find(c => c.id === match.squareId);
+      if (sc) { sc.given_name = first; sc.family_name = last; sc.phone = phone; sc.display = `${first} ${last}`.trim(); }
+    }
+  }
+
   pushUndo('Edit check-in: ' + entry.name);
   saveQueueToStorage();
   scheduleSheetsSave();
@@ -5577,6 +5604,22 @@ async function saveEditCustomer() {
   const local = customerDirectory.find(x => x.squareId === squareId);
   if (local) { local.firstName=first; local.lastName=last; local.phone=phone; local.email=email; local.note=note; }
   localStorage.setItem('muse_customers', JSON.stringify(customerDirectory));
+
+  // Also update squareCustomers cache used for autocomplete
+  const sc = squareCustomers.find(c => c.id === squareId);
+  if (sc) { sc.given_name=first; sc.family_name=last; sc.phone=phone; sc.display=`${first} ${last}`.trim(); }
+
+  // Update any matching queue entries (match by phone)
+  const fullName = last ? `${first} ${last}` : first;
+  let queueUpdated = false;
+  queue.forEach(e => {
+    if (e.phone && e.phone.replace(/\D/g,'').endsWith(phone.replace(/\D/g,''))) {
+      e.name = fullName;
+      updateSheetsRow(e);
+      queueUpdated = true;
+    }
+  });
+  if (queueUpdated) { saveQueueToStorage(); scheduleSheetsSave(); renderQueue(); renderTurns(); }
 
   // Push to Square
   if (squareConfig && squareId) {
