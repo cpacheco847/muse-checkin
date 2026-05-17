@@ -3703,7 +3703,7 @@ function savePhotoCrop() {
   const { type, id } = _photoCropTarget;
   if (type === 'staff') {
     const st = STAFF.find(s => s.id === id);
-    if (st) { st.photo = dataUrl; saveStaffToStorage(); renderStaffList(); renderSchedule(); renderTurns(); }
+    if (st) { st.photo = dataUrl; saveStaffToStorage(); renderStaffList(); renderSchedule(); renderTurns(); updateLoggedInDisplay(); }
   } else if (type === 'fduser') {
     const u = FRONT_DESK_USERS.find(x => x.id === id);
     if (u) { u.photo = dataUrl; saveFdUsersToStorage(); renderFdUsersList(); updateLoggedInDisplay(); }
@@ -3717,7 +3717,7 @@ function clearPhotoCrop() {
   const { type, id } = _photoCropTarget;
   if (type === 'staff') {
     const st = STAFF.find(s => s.id === id);
-    if (st) { delete st.photo; saveStaffToStorage(); renderStaffList(); renderTurns(); }
+    if (st) { delete st.photo; saveStaffToStorage(); renderStaffList(); renderTurns(); updateLoggedInDisplay(); }
   } else if (type === 'fduser') {
     const u = FRONT_DESK_USERS.find(x => x.id === id);
     if (u) { delete u.photo; saveFdUsersToStorage(); renderFdUsersList(); updateLoggedInDisplay(); }
@@ -5378,12 +5378,16 @@ function updateLoggedInDisplay() {
   if (!nameEl || !avatarEl) return;
   const name = activeUser?.name || 'Manager';
   nameEl.textContent = name;
-  avatarEl.textContent = name.charAt(0).toUpperCase();
-  // If the staff member has a photo, use it
-  const staffMember = STAFF.find(s => s.name === name);
-  if (staffMember?.photo) {
-    avatarEl.innerHTML = `<img src="${staffMember.photo}" class="w-full h-full rounded-full object-cover">`;
+
+  // Look up photo — check FRONT_DESK_USERS first (by id), then STAFF (by id then name)
+  const fdUser    = FRONT_DESK_USERS.find(u => u.id === activeUser?.id);
+  const staffUser = STAFF.find(s => s.id === activeUser?.id) || STAFF.find(s => s.name === name);
+  const photo     = fdUser?.photo || staffUser?.photo || null;
+
+  if (photo) {
+    avatarEl.innerHTML = `<img src="${photo}" class="w-full h-full rounded-full object-cover">`;
   } else {
+    avatarEl.innerHTML = '';
     avatarEl.textContent = name.charAt(0).toUpperCase();
   }
 }
