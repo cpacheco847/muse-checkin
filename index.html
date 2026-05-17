@@ -1581,12 +1581,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (result) {
     console.log('[Sync] Loaded from Sheets:', result.queue.length, 'entries, updatedAt:', result.updatedAt);
-    // Always replace local with Sheets on startup — Sheets is the authority
-    queue = result.queue;
-    _lastSheetsUpdate = result.updatedAt;
-    saveQueueToStorage();
-    renderQueue(); // re-render with Sheets data
-    updateStats();
+    // SAFETY: never replace a non-empty local queue with an empty Sheets response
+    // This prevents data loss if Sheets returns empty due to a parse error or wrong date
+    if (result.queue.length > 0) {
+      queue = result.queue;
+      _lastSheetsUpdate = result.updatedAt;
+      saveQueueToStorage();
+      renderQueue();
+      updateStats();
+    } else if (queue.length > 0) {
+      // Local has data but Sheets is empty — push local UP to Sheets to restore it
+      console.log('[Sync] Sheets empty but local has data — pushing local queue up');
+      pushQueueToSheets();
+    }
   } else {
     console.warn('[Sync] Could not load from Sheets — using localStorage fallback');
   }
@@ -5276,7 +5283,8 @@ async function pollSheets() {
     const sizeDiff  = result.queue.length !== queue.length;
     const needsSync = isNewer || sizeDiff;
 
-    if (needsSync) {
+    // SAFETY: never replace a non-empty queue with an empty one during polling
+    if (needsSync && !(result.queue.length === 0 && queue.length > 0)) {
       console.log('[Sync] Poll update — Sheets:', result.queue.length, 'local:', queue.length, 'newer:', isNewer);
       _lastSheetsUpdate = result.updatedAt || new Date().toISOString();
       queue = result.queue;
