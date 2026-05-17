@@ -1320,31 +1320,34 @@ function saveStaffToStorage()    { localStorage.setItem('muse_staff',    JSON.st
 
 // ── Init ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Try localStorage first (instant, works offline)
+  // 1. Load from localStorage instantly (offline fallback)
   queue = loadQueueFromStorage();
 
-  // 2. If empty AND Sheets configured, try to restore from Sheets
-  if (queue.length === 0 && squareConfig) {
-    const sheetsQueue = await loadQueueFromSheets();
-    if (sheetsQueue && sheetsQueue.length > 0) {
-      queue = sheetsQueue;
+  // 2. Sheets is source of truth — always fetch latest on load
+  if (squareConfig) {
+    setSheetsIndicator('syncing');
+    const result = await loadQueueFromSheets();
+    if (result && result.queue.length > 0) {
+      queue = result.queue;
+      _lastSheetsUpdate = result.updatedAt;
       saveQueueToStorage();
-      showToast('Queue restored from Google Sheets ✓');
+      setSheetsIndicator('ok');
+    } else if (queue.length > 0) {
+      // Local has data but Sheets is empty — push local up
+      pushQueueToSheets();
+    } else {
+      setSheetsIndicator('ok');
     }
+    // Start polling for changes from other devices
+    startSheetsPolling();
   }
 
-  // Confirm screen: tap anywhere to reset (works on iOS/Android touch screens)
+  // Confirm screen: tap anywhere to reset (works on iOS/Android)
   const confirmScreen = document.getElementById('screen-confirm');
   if (confirmScreen) {
-    const resetToWelcome = () => {
-      clearTimeout(window._confirmResetTimer);
-      goTo('screen-welcome');
-    };
+    const resetToWelcome = () => { clearTimeout(window._confirmResetTimer); goTo('screen-welcome'); };
     confirmScreen.addEventListener('click', resetToWelcome);
-    confirmScreen.addEventListener('touchend', e => {
-      e.preventDefault(); // prevent ghost click on iOS
-      resetToWelcome();
-    });
+    confirmScreen.addEventListener('touchend', e => { e.preventDefault(); resetToWelcome(); });
   }
 
   setLogo();
@@ -2541,7 +2544,7 @@ async function updateSheetsRow(entry) {
       body: JSON.stringify(payload),
     }).catch(() => {
       // Fallback: direct fetch with no-cors if proxy path fails
-      const SHEETS_URL = `https://script.google.com/macros/s/AKfycbxgXgc59m-Ww56PHvM-h18JqCSLcuucvBMRQS3Z0FnqAlsf3C9w53g8ujT_T1IaYDd4IA/exec`;
+      const SHEETS_URL = `https://script.google.com/macros/s/AKfycby2KFMSdFhtIAV46MNaTMq-j6xiF0oiFBkagPPge6gDfDds4wyIxXpgwp7AOHHkUb6qGw/exec`;
       return fetch(SHEETS_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
@@ -4250,69 +4253,135 @@ function setupTurnsDragDrop() {
   });
 }
 
-// ── Google Sheets Queue Sync ──────────────────────
-const SHEETS_PROXY = 'https://musesquareapi.cpacheco847.workers.dev/sheets';
-let _sheetsSaveTimer = null;
+// ── Multi-Device Queue Sync via Google Sheets ────────────────
+// Sheets = source of truth. All devices poll every 10s.
+// Writes are debounced 2s to avoid conflicts.
 
-// Throttled save — waits 3s after last change before writing to Sheets
-// Prevents hammering the API on rapid consecutive updates
+const SHEETS_PROXY  = 'https://musesquareapi.cpacheco847.workers.dev/sheets';
+const POLL_INTERVAL = 5000; // 5 seconds
+const DEVICE_ID     = (() => {
+  let id = localStorage.getItem('muse_device_id');
+  if (!id) { id = 'dev-' + Math.random().toString(36).slice(2,8); localStorage.setItem('muse_device_id', id); }
+  return id;
+})();
+
+let _sheetsWriteTimer  = null;
+let _lastSheetsUpdate  = null; // ISO string of last known Sheets update time
+let _pollTimer         = null;
+let _isSyncing         = false;
+
+// Schedule a write 2 seconds after the last queue change
 function scheduleSheetsSave() {
-  if (_sheetsSaveTimer) clearTimeout(_sheetsSaveTimer);
-  _sheetsSaveTimer = setTimeout(pushQueueToSheets, 3000);
+  if (_sheetsWriteTimer) clearTimeout(_sheetsWriteTimer);
+  _sheetsWriteTimer = setTimeout(pushQueueToSheets, 2000);
 }
 
+// Push full queue to Sheets
 async function pushQueueToSheets() {
   if (!squareConfig) return;
-  const dot  = document.getElementById('sheets-sync-dot');
-  const text = document.getElementById('sheets-sync-text');
+  setSheetsIndicator('syncing');
   try {
-    if (dot)  dot.style.background  = '#f5c870'; // yellow = syncing
-    if (text) text.textContent = 'Syncing…';
-    const payload = {
-      action: 'saveQueue',
-      queue: queue.map(e => ({
-        ...e,
-        checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
-      })),
-    };
     const res = await fetch(SHEETS_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        action: 'saveQueue',
+        device: DEVICE_ID,
+        queue: queue.map(e => ({
+          ...e,
+          checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+        })),
+      }),
     });
     const data = await res.json();
     if (data.success) {
-      if (dot)  dot.style.background  = '#2a7a4f'; // green = synced
-      if (text) text.textContent = 'Sheets ✓';
-    } else throw new Error('Sheets returned error');
-  } catch (e) {
-    if (dot)  dot.style.background  = '#fa746f'; // red = failed
-    if (text) text.textContent = 'Sheets ✗';
+      _lastSheetsUpdate = new Date().toISOString();
+      setSheetsIndicator('ok');
+    } else throw new Error(data.error || 'Save failed');
+  } catch(err) {
+    setSheetsIndicator('error');
+    console.warn('Sheets push failed:', err);
   }
 }
 
+// Load queue from Sheets — used on startup and by poller
 async function loadQueueFromSheets() {
   if (!squareConfig) return null;
   try {
     const res  = await fetch(`${SHEETS_PROXY}?action=loadQueue`);
     const data = await res.json();
     if (data.success && Array.isArray(data.queue) && data.queue.length > 0) {
-      return data.queue.map(e => ({ ...e, checkinTime: new Date(e.checkinTime) }));
+      return {
+        queue:     data.queue.map(e => ({ ...e, checkinTime: new Date(e.checkinTime) })),
+        updatedAt: data.updatedAt,
+        device:    data.device,
+      };
     }
-  } catch (e) { /* silent */ }
+  } catch(e) { console.warn('Sheets load failed:', e); }
   return null;
+}
+
+// Poll Sheets for updates from other devices
+async function pollSheets() {
+  if (!squareConfig || _isSyncing) return;
+  _isSyncing = true;
+  try {
+    const result = await loadQueueFromSheets();
+    if (!result) return;
+
+    // Only update if the Sheets version is newer and came from a different device
+    if (result.updatedAt &&
+        result.device !== DEVICE_ID &&
+        result.updatedAt !== _lastSheetsUpdate) {
+      _lastSheetsUpdate = result.updatedAt;
+      queue = result.queue;
+      saveQueueToStorage(); // cache locally
+      renderQueue();
+      updateStats();
+      renderTurns();
+      setSheetsIndicator('ok');
+    }
+  } catch(e) { /* silent */ }
+  _isSyncing = false;
+}
+
+// Start polling when the dashboard is open
+function startSheetsPolling() {
+  if (_pollTimer) return;
+  _pollTimer = setInterval(pollSheets, POLL_INTERVAL);
+}
+
+function stopSheetsPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+// Visual indicator
+function setSheetsIndicator(state) {
+  const dot  = document.getElementById('sheets-sync-dot');
+  const text = document.getElementById('sheets-sync-text');
+  if (!dot || !text) return;
+  const states = {
+    ok:      { bg: '#2a7a4f', label: 'Sheets ✓' },
+    syncing: { bg: '#f5c870', label: 'Syncing…' },
+    error:   { bg: '#fa746f', label: 'Sheets ✗' },
+    idle:    { bg: '#adb3b5', label: 'Sheets'   },
+  };
+  const s = states[state] || states.idle;
+  dot.style.background = s.bg;
+  text.textContent     = s.label;
 }
 
 async function clearSheetsQueue() {
   if (!squareConfig) return;
   try {
     await fetch(SHEETS_PROXY, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'clearQueue' }),
+      body:    JSON.stringify({ action: 'clearQueue' }),
     });
-  } catch (e) { /* silent */ }
+  } catch(e) { /* silent */ }
 }
+
 
 
 function exportAllData() {
