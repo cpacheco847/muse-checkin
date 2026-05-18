@@ -361,13 +361,13 @@ tailwind.config = {
     </nav>
     <!-- Action buttons -->
     <div class="flex items-center gap-2">
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant" style="height:32px">
         <span class="sync-dot ok" id="sync-dot"></span>
         <span id="sync-label">Square synced</span>
       </div>
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant" id="sheets-sync-pill" title="Google Sheets sync status — tap to force sync">
-        <span class="w-2 h-2 rounded-full" id="sheets-sync-dot" style="background:#adb3b5"></span>
-        <button onclick="forceSyncNow()" class="hover:text-on-surface transition-colors"><span id="sheets-sync-text">Sheets</span></button>
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant cursor-pointer hover:bg-surface-container-high transition-colors" style="height:32px" onclick="forceSyncNow()" title="Tap to force sync">
+        <span class="sync-dot" id="sheets-sync-dot" style="background:#adb3b5"></span>
+        <span id="sheets-sync-text">Sheets</span>
       </div>
       <button onclick="syncSquare()" title="Sync Square" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container transition-colors">
         <span class="material-symbols-outlined text-on-surface-variant" style="font-size:22px">sync</span>
@@ -433,10 +433,13 @@ tailwind.config = {
           </div>
           <div class="flex gap-2">
             <button onclick="exportReportExcel()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest hover:bg-surface-container text-on-surface font-body font-semibold text-sm transition-colors">
-              <span class="material-symbols-outlined" style="font-size:16px">table_view</span> Excel
+              <span class="material-symbols-outlined" style="font-size:16px">table_view</span> CSV
+            </button>
+            <button onclick="exportReportPDF()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest hover:bg-surface-container text-on-surface font-body font-semibold text-sm transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">picture_as_pdf</span> PDF
             </button>
             <button onclick="exportReportSheets()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
-              <span class="material-symbols-outlined" style="font-size:16px">upload_file</span> Sheets
+              <span class="material-symbols-outlined" style="font-size:16px">upload</span> Sheets
             </button>
           </div>
         </div>
@@ -452,11 +455,11 @@ tailwind.config = {
           <div id="custom-range-inputs" class="hidden grid grid-cols-2 gap-3">
             <div>
               <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">From</label>
-              <input type="date" id="report-from" class="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="runReport()">
+              <input type="date" id="report-from" class="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="setReportRange('custom'); runReport()">
             </div>
             <div>
               <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">To</label>
-              <input type="date" id="report-to" class="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="runReport()">
+              <input type="date" id="report-to" class="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-2 text-sm font-body text-on-surface focus:outline-none focus:border-primary" onchange="setReportRange('custom'); runReport()">
             </div>
           </div>
           <p class="text-xs font-body text-on-surface-variant mt-2" id="report-range-label">Showing: Today</p>
@@ -1426,6 +1429,49 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════
+     DELETE TRANSACTION MODAL
+═══════════════════════════════════════════════ -->
+<div id="delete-txn-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
+  <div class="bg-surface-container-lowest rounded-2xl p-6 w-full max-w-md shadow-2xl fade-up mx-4">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-full bg-error/15 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-error" style="font-size:20px">warning</span>
+      </div>
+      <div>
+        <h2 class="text-lg font-headline font-bold text-on-surface" id="del-txn-title">Delete Transaction?</h2>
+        <p class="text-xs font-body text-on-surface-variant" id="del-txn-subtitle"></p>
+      </div>
+    </div>
+    <!-- Step 1: first warning -->
+    <div id="del-txn-step1">
+      <p class="text-sm font-body text-on-surface mb-4">This will permanently remove this transaction from your records and reports. <strong>This cannot be undone.</strong></p>
+      <p class="text-sm font-body text-on-surface mb-5">Are you sure you want to delete this transaction?</p>
+      <div class="flex gap-2">
+        <button onclick="closeDeleteTxnModal()" class="flex-1 border border-outline-variant/60 text-on-surface-variant py-3 rounded-xl font-headline font-semibold">Cancel</button>
+        <button onclick="deleteTxnStep2()" class="flex-1 bg-error/10 text-error border border-error/30 py-3 rounded-xl font-headline font-bold hover:bg-error/20 transition-all">Yes, Continue</button>
+      </div>
+    </div>
+    <!-- Step 2: final warning + reason -->
+    <div id="del-txn-step2" class="hidden">
+      <div class="bg-error/10 border border-error/30 rounded-xl p-3 mb-4">
+        <p class="text-sm font-body text-error font-semibold">⚠ Final Warning</p>
+        <p class="text-xs font-body text-error mt-1">You are about to permanently delete this transaction. This action is logged and cannot be reversed.</p>
+      </div>
+      <div class="mb-4">
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Reason for deletion <span class="text-error">*</span></label>
+        <textarea id="del-txn-reason" rows="3" placeholder="e.g. Test transaction, duplicate entry, customer request..."
+          class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-body text-on-surface focus:border-error outline-none resize-none"></textarea>
+        <p class="text-[11px] font-body text-outline mt-1">This reason will be saved to the deletion log.</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeDeleteTxnModal()" class="flex-1 border border-outline-variant/60 text-on-surface-variant py-3 rounded-xl font-headline font-semibold">Cancel</button>
+        <button onclick="confirmDeleteTransaction()" class="flex-1 bg-error text-white py-3 rounded-xl font-headline font-bold hover:bg-error/80 transition-all">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] hidden">
   <div class="bg-on-surface text-surface px-5 py-3 rounded-xl text-sm font-body font-medium shadow-2xl fade-up" id="toast-text"></div>
 </div>
@@ -1675,6 +1721,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ['customer-dir-modal',  closeCustomerDir],
         ['edit-customer-modal', closeEditCustomer],
         ['photo-crop-modal',    closePhotoCrop],
+        ['delete-txn-modal',    closeDeleteTxnModal],
         ['square-modal',        () => { document.getElementById('square-modal').classList.add('hidden'); document.getElementById('square-modal').style.display=''; }],
       ];
       for (const [id, fn] of allModals) {
@@ -2943,11 +2990,12 @@ function setReportRange(type) {
   if (type === 'custom') {
     customInputs?.classList.remove('hidden');
     customInputs?.classList.add('grid');
+    // Don't run report yet — wait for user to pick both dates
   } else {
     customInputs?.classList.add('hidden');
     customInputs?.classList.remove('grid');
+    runReport();
   }
-  if (type !== 'custom') runReport();
 }
 
 function getReportDates() {
@@ -2993,7 +3041,7 @@ function runReport() {
   const combined = [...liveSnaps, ...allRecords.filter(r => !liveIds.has(r.id))];
 
   const filtered = combined.filter(r => {
-    const d = new Date(r.checkinTime);
+    const d = r.checkinTime instanceof Date ? r.checkinTime : new Date(r.checkinTime);
     return d >= from && d <= to;
   });
 
@@ -3281,7 +3329,11 @@ function renderTransactions() {
   if (dateFilter) {
     combined = combined.filter(r => {
       const d = new Date(r.checkinTime);
-      return d.toISOString().slice(0,10) === dateFilter;
+      // Use local date comparison to avoid UTC timezone shifting dates
+      const localDate = d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0');
+      return localDate === dateFilter;
     });
   }
 
@@ -3319,8 +3371,12 @@ function renderTransactions() {
             ${assignRows}
             <div class="text-[11px] font-body text-outline mt-1">${dateStr} · ${timeStr}${r.phone ? ' · ' + r.phone : ''}</div>
           </div>
-          <div class="text-right ml-4 flex-shrink-0">
+          <div class="text-right ml-4 flex-shrink-0 flex flex-col items-end gap-2">
             <div class="text-lg font-headline font-extrabold text-primary">$${(r.totalCost||0).toFixed(2)}</div>
+            <button onclick="initiateDeleteTransaction('${r.id}')"
+              class="flex items-center gap-1 text-[11px] font-body text-outline hover:text-error transition-colors px-2 py-1 rounded-lg hover:bg-error/10">
+              <span class="material-symbols-outlined" style="font-size:14px">delete</span> Delete
+            </button>
           </div>
         </div>
       </div>
@@ -3390,6 +3446,99 @@ function exportReportExcel() {
 }
 
 // ── Sheets Report Export ──────────────────────────
+function exportReportPDF() {
+  const d = window._currentReportData;
+  if (!d || d.filtered.length === 0) { showToast('No data to export.'); return; }
+
+  const fmt    = dt => new Date(dt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  const fmtT   = dt => new Date(dt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  const period = d.from.toDateString() === d.to.toDateString()
+    ? fmt(d.from)
+    : `${fmt(d.from)} – ${fmt(d.to)}`;
+
+  // Commission totals
+  const staffEntries = Object.entries(d.staffMap).sort((a,b) => b[1].income - a[1].income);
+  const totalComm = staffEntries.reduce((sum, [tid, data]) => {
+    const t = STAFF.find(s=>s.id===tid);
+    return sum + (t?.commission != null ? data.income * t.commission / 100 : 0);
+  }, 0);
+  const shopKeeps = d.totalIncome - totalComm;
+
+  const staffRows = staffEntries.map(([tid, data]) => {
+    const t = STAFF.find(s=>s.id===tid);
+    const comm = t?.commission != null ? (data.income * t.commission / 100) : null;
+    const turns = data.fullTurns + data.halfTurns;
+    return `<tr>
+      <td>${t?.name||'Unknown'}</td>
+      <td>${data.count}</td>
+      <td>${turns}t${data.bonusTurns>0?' +'+data.bonusTurns+'b':''}</td>
+      <td>$${data.income.toFixed(2)}</td>
+      <td>${t?.commission!=null?t.commission+'%':'—'}</td>
+      <td>${comm!=null?'$'+comm.toFixed(2):'—'}</td>
+      <td>${comm!=null?'$'+(data.income-comm).toFixed(2):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const txRows = d.filtered.map(r => {
+    const dt = new Date(r.checkinTime);
+    const staffNames = [...new Set((r.assignments||[]).filter(a=>a.techId).map(a=>STAFF.find(s=>s.id===a.techId)?.name||'').filter(Boolean))].join(', ');
+    return `<tr>
+      <td>${dt.toLocaleDateString()}</td>
+      <td>${fmtT(dt)}</td>
+      <td>${r.name}</td>
+      <td>${r.services.map(sid=>SERVICES.find(s=>s.id===sid)?.label||sid).join(', ')}</td>
+      <td>${staffNames||'—'}</td>
+      <td>$${(r.totalCost||0).toFixed(2)}</td>
+      <td>${r.status}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Muse Nails & Spa — Report ${period}</title>
+    <style>
+      body { font-family: Arial, sans-serif; font-size: 12px; color: #222; margin: 24px; }
+      h1 { color: #1a5252; font-size: 20px; margin-bottom: 4px; }
+      h2 { color: #1a5252; font-size: 14px; margin: 20px 0 8px; border-bottom: 2px solid #1a5252; padding-bottom: 4px; }
+      .summary { display: flex; gap: 24px; margin: 12px 0 20px; flex-wrap: wrap; }
+      .card { background: #f5f5f5; border-radius: 8px; padding: 10px 16px; min-width: 120px; text-align: center; }
+      .card .val { font-size: 20px; font-weight: bold; color: #1a5252; }
+      .card .lbl { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+      .card.amber .val { color: #a05000; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+      th { background: #1a5252; color: white; padding: 6px 8px; text-align: left; font-size: 11px; }
+      td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; font-size: 11px; }
+      tr:nth-child(even) td { background: #fafafa; }
+      .footer { margin-top: 24px; font-size: 10px; color: #999; text-align: center; }
+      @media print { body { margin: 12px; } }
+    </style>
+  </head><body>
+    <h1>Muse Nails &amp; Spa — Daily Report</h1>
+    <p style="color:#666;margin:0">${period}</p>
+    <div class="summary">
+      <div class="card"><div class="val">$${d.totalIncome.toFixed(2)}</div><div class="lbl">Total Billed</div></div>
+      <div class="card"><div class="val">${d.guestCount}</div><div class="lbl">Guests Served</div></div>
+      <div class="card"><div class="val">$${(d.totalIncome/Math.max(d.guestCount,1)).toFixed(2)}</div><div class="lbl">Avg Ticket</div></div>
+      <div class="card"><div class="val">$${shopKeeps.toFixed(2)}</div><div class="lbl">Shop Keeps</div></div>
+      <div class="card amber"><div class="val">$${totalComm.toFixed(2)}</div><div class="lbl">Commission Owed</div></div>
+    </div>
+    <h2>Staff Breakdown</h2>
+    <table><thead><tr><th>Technician</th><th>Services</th><th>Turns</th><th>Billed</th><th>Comm %</th><th>Commission</th><th>Shop Keeps</th></tr></thead>
+    <tbody>${staffRows}</tbody></table>
+    <h2>Transactions (${d.filtered.length})</h2>
+    <table><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Services</th><th>Staff</th><th>Total</th><th>Status</th></tr></thead>
+    <tbody>${txRows}</tbody></table>
+    <div class="footer">Generated ${new Date().toLocaleString()} · Muse Nails &amp; Spa</div>
+  </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  // Trigger print dialog after a short delay so content renders
+  if (win) setTimeout(() => { win.print(); }, 600);
+  URL.revokeObjectURL(url);
+  showToast('PDF report opened — use Print → Save as PDF');
+}
+
 async function exportReportSheets() {
   const d = window._currentReportData;
   if (!d || d.filtered.length === 0) { showToast('No data to export.'); return; }
@@ -5383,6 +5532,97 @@ async function clearSheetsQueue() {
 
 
 
+// ── Delete Transaction ────────────────────────────
+let _deleteTxnId     = null;
+let _deleteTxnRecord = null;
+
+function initiateDeleteTransaction(recordId) {
+  const fromRecords = allRecords.find(r => String(r.id) === String(recordId));
+  const fromQueue   = queue.find(e => String(e.id) === String(recordId));
+  _deleteTxnRecord  = fromRecords || (fromQueue ? {
+    id: String(fromQueue.id), name: fromQueue.name,
+    totalCost: fromQueue.totalCost || 0,
+    checkinTime: fromQueue.checkinTime,
+    status: fromQueue.status,
+    services: fromQueue.services,
+    assignments: fromQueue.assignments || [],
+  } : null);
+  if (!_deleteTxnRecord) { showToast('Record not found.'); return; }
+  _deleteTxnId = String(recordId);
+  const dt = new Date(_deleteTxnRecord.checkinTime);
+  document.getElementById('del-txn-subtitle').textContent =
+    `${_deleteTxnRecord.name} · ${dt.toLocaleDateString()} · $${(_deleteTxnRecord.totalCost||0).toFixed(2)}`;
+  document.getElementById('del-txn-reason').value = '';
+  document.getElementById('del-txn-step1').classList.remove('hidden');
+  document.getElementById('del-txn-step2').classList.add('hidden');
+  document.getElementById('delete-txn-modal').classList.remove('hidden');
+  document.getElementById('delete-txn-modal').style.display = 'flex';
+}
+
+function deleteTxnStep2() {
+  document.getElementById('del-txn-step1').classList.add('hidden');
+  document.getElementById('del-txn-step2').classList.remove('hidden');
+  setTimeout(() => document.getElementById('del-txn-reason').focus(), 100);
+}
+
+function closeDeleteTxnModal() {
+  document.getElementById('delete-txn-modal').classList.add('hidden');
+  document.getElementById('delete-txn-modal').style.display = '';
+  _deleteTxnId = null; _deleteTxnRecord = null;
+}
+
+function confirmDeleteTransaction() {
+  const reason = document.getElementById('del-txn-reason').value.trim();
+  if (!reason) { showToast('Please enter a reason for deletion.'); return; }
+  if (!_deleteTxnId) return;
+
+  // Remove from allRecords
+  allRecords = allRecords.filter(r => String(r.id) !== _deleteTxnId);
+  localStorage.setItem('muse_records', JSON.stringify(allRecords));
+
+  // Remove from live queue if present
+  const qLen = queue.length;
+  queue = queue.filter(e => String(e.id) !== _deleteTxnId);
+  if (queue.length !== qLen) { saveQueueToStorage(); scheduleSheetsSave(); }
+
+  // Save to deletion log
+  const log = JSON.parse(localStorage.getItem('muse_deletion_log') || '[]');
+  log.push({
+    deletedAt: new Date().toISOString(),
+    deletedBy: activeUser?.name || 'Unknown',
+    recordId:  _deleteTxnId,
+    name:      _deleteTxnRecord?.name || '',
+    total:     _deleteTxnRecord?.totalCost || 0,
+    checkinTime: _deleteTxnRecord?.checkinTime || '',
+    reason,
+  });
+  localStorage.setItem('muse_deletion_log', JSON.stringify(log));
+
+  // Write deletion note to Transaction Log in Sheets
+  const proxy = `${SQUARE_PROXY.replace('/square', '')}/sheets`;
+  fetch(proxy, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action:    'update',
+      entryId:   _deleteTxnId,
+      name:      _deleteTxnRecord?.name || '',
+      status:    'deleted',
+      detail:    `DELETED by ${activeUser?.name||'Unknown'}: ${reason}`,
+      loggedBy:  activeUser?.name || '',
+      checkinTime: _deleteTxnRecord?.checkinTime || new Date().toISOString(),
+      services:  (_deleteTxnRecord?.services||[]).map(sid => SERVICES.find(s=>s.id===sid)?.label||sid),
+      total:     _deleteTxnRecord?.totalCost || 0,
+    }),
+  }).catch(()=>{});
+
+  closeDeleteTxnModal();
+  renderTransactions();
+  renderQueue();
+  runReport();
+  showToast('Transaction deleted — reason logged ✓');
+}
+
 function exportAllData() {
   const allKeys = [
     'muse_records', 'muse_queue_archive', 'muse_turns_history',
@@ -5390,7 +5630,7 @@ function exportAllData() {
     'muse_staff', 'muse_services', 'muse_fd_users',
     'muse_schedule', 'muse_sq_config',
     'muse_hidden_services', 'muse_inactive_staff',
-    'muse_turns_order', 'muse_turns_break',
+    'muse_turns_order', 'muse_turns_break', 'muse_deletion_log',
   ];
   const backup = {
     exportedAt: new Date().toISOString(),
