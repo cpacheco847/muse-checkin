@@ -355,6 +355,9 @@ tailwind.config = {
       <button class="dash-tab" id="nav-settings" onclick="showDashPanel('settings')">
         <span class="material-symbols-outlined" style="font-size:18px">tune</span> Settings
       </button>
+      <button class="dash-tab" id="nav-giftcards" onclick="showDashPanel('giftcards')">
+        <span class="material-symbols-outlined" style="font-size:18px">card_giftcard</span> Gift Cards
+      </button>
       <button class="dash-tab" onclick="showCustomerDir()" title="Customer Directory">
         <span class="material-symbols-outlined" style="font-size:18px">contacts</span> Customers
       </button>
@@ -818,10 +821,119 @@ tailwind.config = {
   </div>
 </div>
 
-
 <!-- ═══════════════════════════════════════════════
-     PIN MODAL
+     GIFT CARDS PANEL (inside dashboard)
 ═══════════════════════════════════════════════ -->
+<div id="panel-giftcards" class="dash-panel">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h2 class="text-xl font-headline font-bold text-on-surface">Gift Cards</h2>
+      <p class="text-sm font-body text-on-surface-variant mt-0.5">Track gift cards sold and redeemed</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="exportGiftCardsSheets()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+        <span class="material-symbols-outlined" style="font-size:16px">upload</span> Sync to Sheets
+      </button>
+      <button onclick="showAddGiftCard()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+        <span class="material-symbols-outlined" style="font-size:16px">add</span> New Gift Card
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary bar -->
+  <div class="grid grid-cols-4 gap-3 mb-5">
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+      <div class="text-xl font-headline font-extrabold text-primary" id="gc-total-sold">0</div>
+      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Cards Sold</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+      <div class="text-xl font-headline font-extrabold text-on-surface" id="gc-total-value">$0.00</div>
+      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Total Value</div>
+    </div>
+    <div class="rounded-xl p-4 border text-center" style="background:rgba(200,230,197,0.2);border-color:rgba(42,122,79,0.3)">
+      <div class="text-xl font-headline font-extrabold" style="color:#2a7a4f" id="gc-total-used">$0.00</div>
+      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Amount Used</div>
+    </div>
+    <div class="rounded-xl p-4 border text-center" style="background:rgba(255,224,178,0.3);border-color:rgba(212,134,10,0.4)">
+      <div class="text-xl font-headline font-extrabold" style="color:#a05000" id="gc-total-balance">$0.00</div>
+      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Outstanding Balance</div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="mb-4">
+    <input type="text" id="gc-search" placeholder="Search by serial, name, phone…"
+      oninput="renderGiftCards()"
+      class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-body focus:border-primary outline-none">
+  </div>
+
+  <!-- Table header -->
+  <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden">
+    <div class="grid text-[10px] font-body font-semibold text-on-surface-variant uppercase tracking-widest px-4 py-2 border-b border-surface-container-high"
+      style="grid-template-columns:80px 90px 1fr 1fr 90px 90px 80px 80px 1fr auto">
+      <span>Date</span><span>Serial #</span><span>From</span><span>To</span><span>Phone</span>
+      <span>Purchase Amt</span><span>Date Used</span><span>Amt Used</span><span>Notes</span><span></span>
+    </div>
+    <div id="gc-list" class="divide-y divide-surface-container-high"></div>
+    <div id="gc-empty" class="hidden text-sm font-body text-on-surface-variant text-center py-8">No gift cards yet. Click New Gift Card to add one.</div>
+  </div>
+</div>
+═══════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════
+     ADD / EDIT GIFT CARD MODAL
+═══════════════════════════════════════════════ -->
+<div id="gc-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
+  <div class="bg-surface-container-lowest rounded-2xl p-6 w-full max-w-lg shadow-2xl fade-up mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-headline font-bold text-on-surface" id="gc-modal-title">New Gift Card</h2>
+      <button onclick="closeGcModal()" class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <input type="hidden" id="gc-edit-id">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Date Purchased</label>
+        <input type="date" id="gc-date" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Serial No.</label>
+        <input type="text" id="gc-serial" placeholder="e.g. 00000029" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Purchase Amount ($)</label>
+        <input type="number" id="gc-amount" min="0" step="0.01" placeholder="0.00" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Phone</label>
+        <input type="tel" id="gc-phone" placeholder="(000) 000-0000" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">From (Purchaser)</label>
+        <input type="text" id="gc-from" placeholder="Name of buyer" oninput="autoCapitalize(this)" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">To (Recipient)</label>
+        <input type="text" id="gc-to" placeholder="Name of recipient" oninput="autoCapitalize(this)" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Date Used</label>
+        <input type="date" id="gc-date-used" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div>
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Amount Used ($)</label>
+        <input type="number" id="gc-amount-used" min="0" step="0.01" placeholder="0.00" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-headline focus:border-primary outline-none">
+      </div>
+      <div class="col-span-2">
+        <label class="text-[11px] font-body font-semibold text-outline uppercase tracking-widest block mb-1">Notes</label>
+        <textarea id="gc-notes" rows="2" placeholder="e.g. For Delux Pedi and Classic Mani" class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-body focus:border-primary outline-none resize-none"></textarea>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="closeGcModal()" class="flex-1 border border-outline-variant/60 text-on-surface-variant py-3 rounded-xl font-headline font-semibold">Cancel</button>
+      <button onclick="saveGiftCard()" class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-headline font-bold hover:bg-primary-dim transition-all active:scale-95">Save Gift Card</button>
+    </div>
+  </div>
+</div>
+
 <div id="pin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-on-surface/40">
   <div class="bg-surface-container-lowest rounded-2xl p-8 w-80 shadow-2xl fade-up">
     <h2 class="text-xl font-headline font-bold text-on-surface text-center mb-1">Staff Access</h2>
@@ -1722,6 +1834,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ['edit-customer-modal', closeEditCustomer],
         ['photo-crop-modal',    closePhotoCrop],
         ['delete-txn-modal',    closeDeleteTxnModal],
+        ['gc-modal',            closeGcModal],
         ['square-modal',        () => { document.getElementById('square-modal').classList.add('hidden'); document.getElementById('square-modal').style.display=''; }],
       ];
       for (const [id, fn] of allModals) {
@@ -2396,6 +2509,7 @@ function showDashPanel(panel) {
   if (panel === 'reports')       { setReportRange('today'); }
   if (panel === 'transactions')  renderTransactions();
   if (panel === 'settings')      renderSettingsPanel();
+  if (panel === 'giftcards')     renderGiftCards();
   if (panel === 'turns') {
     const di = document.getElementById('turns-history-date');
     if (di && !di.value) di.value = new Date().toISOString().slice(0,10);
@@ -5532,7 +5646,187 @@ async function clearSheetsQueue() {
 
 
 
-// ── Delete Transaction ────────────────────────────
+// ── Gift Cards ────────────────────────────────────
+let giftCards = JSON.parse(localStorage.getItem('muse_gift_cards') || 'null');
+
+// Pre-load existing gift cards from your Google Sheets data on first run
+if (!giftCards) {
+  giftCards = [
+    { id:'gc-001', datePurchased:'2026-05-09', serial:'', amount:60,  from:'',              to:'Jessica Lomeli',      phone:'909 363 5820', dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-09T00:00:00Z', updatedAt:'2026-05-09T00:00:00Z' },
+    { id:'gc-002', datePurchased:'2026-05-09', serial:'', amount:85,  from:'',              to:'Shereda Evans',       phone:'909 910 5077', dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-09T00:00:00Z', updatedAt:'2026-05-09T00:00:00Z' },
+    { id:'gc-003', datePurchased:'2026-05-09', serial:'', amount:40,  from:'Elma Jones',   to:'',                    phone:'909 553 1572', dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-09T00:00:00Z', updatedAt:'2026-05-09T00:00:00Z' },
+    { id:'gc-004', datePurchased:'2026-05-09', serial:'', amount:85,  from:'Andrey Dylon', to:'Alicia Dylon',        phone:'559 260 0292', dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-09T00:00:00Z', updatedAt:'2026-05-09T00:00:00Z' },
+    { id:'gc-005', datePurchased:'2026-05-10', serial:'', amount:30,  from:'Jessica B',    to:'Grandma Lorraine',    phone:'000 000 7338', dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-10T00:00:00Z', updatedAt:'2026-05-10T00:00:00Z' },
+    { id:'gc-006', datePurchased:'2026-05-10', serial:'', amount:100, from:'',              to:'',                    phone:'',             dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-10T00:00:00Z', updatedAt:'2026-05-10T00:00:00Z' },
+    { id:'gc-007', datePurchased:'2026-05-10', serial:'', amount:120, from:'Jaden',        to:'',                    phone:'909 809 4382', dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-10T00:00:00Z', updatedAt:'2026-05-10T00:00:00Z' },
+    { id:'gc-008', datePurchased:'2026-05-11', serial:'', amount:50,  from:'sarah',        to:'',                    phone:'',             dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-11T00:00:00Z', updatedAt:'2026-05-11T00:00:00Z' },
+    { id:'gc-009', datePurchased:'2026-05-12', serial:'', amount:40,  from:'',              to:'',                    phone:'',             dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-12T00:00:00Z', updatedAt:'2026-05-12T00:00:00Z' },
+    { id:'gc-010', datePurchased:'2026-05-12', serial:'', amount:33,  from:'',              to:'',                    phone:'818 307 2870', dateUsed:'', amountUsed:0,  notes:'for classic ped',              createdAt:'2026-05-12T00:00:00Z', updatedAt:'2026-05-12T00:00:00Z' },
+    { id:'gc-011', datePurchased:'2026-05-12', serial:'', amount:79,  from:'',              to:'',                    phone:'',             dateUsed:'', amountUsed:0,  notes:'',                              createdAt:'2026-05-12T00:00:00Z', updatedAt:'2026-05-12T00:00:00Z' },
+    { id:'gc-012', datePurchased:'2026-05-07', serial:'00000029', amount:80, from:'Mom',   to:'Jayne (Kate Summers)',phone:'909 846 0519', dateUsed:'2026-05-17', amountUsed:80, notes:'Used $56, returned $24 in cash', createdAt:'2026-05-07T00:00:00Z', updatedAt:'2026-05-17T00:00:00Z' },
+    { id:'gc-013', datePurchased:'2026-05-07', serial:'00000030', amount:80, from:'Mom',   to:'Kate Summers',        phone:'909 846 0519', dateUsed:'2026-05-17', amountUsed:80, notes:'Used $56, returned $24 in cash', createdAt:'2026-05-07T00:00:00Z', updatedAt:'2026-05-17T00:00:00Z' },
+    { id:'gc-014', datePurchased:'2026-05-17', serial:'00000040', amount:100, from:'teresa reynolds', to:'Asheley Reynold', phone:'909 953 9050', dateUsed:'', amountUsed:0, notes:'', createdAt:'2026-05-17T00:00:00Z', updatedAt:'2026-05-17T00:00:00Z' },
+  ];
+  localStorage.setItem('muse_gift_cards', JSON.stringify(giftCards));
+}
+
+function saveGiftCardsToStorage() {
+  localStorage.setItem('muse_gift_cards', JSON.stringify(giftCards));
+}
+
+function showDashPanelGiftCards() {
+  renderGiftCards();
+}
+
+function showAddGiftCard() {
+  document.getElementById('gc-modal-title').textContent = 'New Gift Card';
+  document.getElementById('gc-edit-id').value = '';
+  document.getElementById('gc-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('gc-serial').value = '';
+  document.getElementById('gc-amount').value = '';
+  document.getElementById('gc-phone').value = '';
+  document.getElementById('gc-from').value = '';
+  document.getElementById('gc-to').value = '';
+  document.getElementById('gc-date-used').value = '';
+  document.getElementById('gc-amount-used').value = '';
+  document.getElementById('gc-notes').value = '';
+  document.getElementById('gc-modal').classList.remove('hidden');
+  document.getElementById('gc-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('gc-serial').focus(), 100);
+}
+
+function showEditGiftCard(id) {
+  const gc = giftCards.find(g => g.id === id);
+  if (!gc) return;
+  document.getElementById('gc-modal-title').textContent = 'Edit Gift Card';
+  document.getElementById('gc-edit-id').value = id;
+  document.getElementById('gc-date').value       = gc.datePurchased || '';
+  document.getElementById('gc-serial').value     = gc.serial || '';
+  document.getElementById('gc-amount').value     = gc.amount || '';
+  document.getElementById('gc-phone').value      = gc.phone || '';
+  document.getElementById('gc-from').value       = gc.from || '';
+  document.getElementById('gc-to').value         = gc.to || '';
+  document.getElementById('gc-date-used').value  = gc.dateUsed || '';
+  document.getElementById('gc-amount-used').value = gc.amountUsed || '';
+  document.getElementById('gc-notes').value      = gc.notes || '';
+  document.getElementById('gc-modal').classList.remove('hidden');
+  document.getElementById('gc-modal').style.display = 'flex';
+}
+
+function closeGcModal() {
+  document.getElementById('gc-modal').classList.add('hidden');
+  document.getElementById('gc-modal').style.display = '';
+}
+
+function saveGiftCard() {
+  const editId = document.getElementById('gc-edit-id').value;
+  const gc = {
+    id:            editId || 'gc-' + Date.now(),
+    datePurchased: document.getElementById('gc-date').value,
+    serial:        document.getElementById('gc-serial').value.trim(),
+    amount:        parseFloat(document.getElementById('gc-amount').value) || 0,
+    phone:         document.getElementById('gc-phone').value.trim(),
+    from:          document.getElementById('gc-from').value.trim(),
+    to:            document.getElementById('gc-to').value.trim(),
+    dateUsed:      document.getElementById('gc-date-used').value,
+    amountUsed:    parseFloat(document.getElementById('gc-amount-used').value) || 0,
+    notes:         document.getElementById('gc-notes').value.trim(),
+    createdAt:     editId ? (giftCards.find(g=>g.id===editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+    updatedAt:     new Date().toISOString(),
+  };
+  if (editId) {
+    const idx = giftCards.findIndex(g => g.id === editId);
+    if (idx >= 0) giftCards[idx] = gc; else giftCards.push(gc);
+  } else {
+    giftCards.push(gc);
+  }
+  saveGiftCardsToStorage();
+  closeGcModal();
+  renderGiftCards();
+  exportGiftCardsSheets(); // auto-sync on save
+  showToast(editId ? 'Gift card updated ✓' : 'Gift card added ✓');
+}
+
+function deleteGiftCard(id) {
+  showWarnModal('Delete gift card?', 'This will permanently remove this gift card record.', () => {
+    giftCards = giftCards.filter(g => g.id !== id);
+    saveGiftCardsToStorage();
+    renderGiftCards();
+    showToast('Gift card deleted');
+  });
+}
+
+function renderGiftCards() {
+  const list  = document.getElementById('gc-list');
+  const empty = document.getElementById('gc-empty');
+  if (!list) return;
+
+  const q = (document.getElementById('gc-search')?.value || '').toLowerCase();
+  const filtered = giftCards.filter(g =>
+    !q || (g.serial||'').toLowerCase().includes(q) ||
+    (g.from||'').toLowerCase().includes(q) ||
+    (g.to||'').toLowerCase().includes(q) ||
+    (g.phone||'').includes(q) ||
+    (g.notes||'').toLowerCase().includes(q)
+  ).sort((a,b) => (b.datePurchased||'') > (a.datePurchased||'') ? 1 : -1);
+
+  // Summary
+  const totalValue   = giftCards.reduce((s,g) => s + (g.amount||0), 0);
+  const totalUsed    = giftCards.reduce((s,g) => s + (g.amountUsed||0), 0);
+  const totalBalance = totalValue - totalUsed;
+  const el = id => document.getElementById(id);
+  if (el('gc-total-sold'))    el('gc-total-sold').textContent    = giftCards.length;
+  if (el('gc-total-value'))   el('gc-total-value').textContent   = '$' + totalValue.toFixed(2);
+  if (el('gc-total-used'))    el('gc-total-used').textContent    = '$' + totalUsed.toFixed(2);
+  if (el('gc-total-balance')) el('gc-total-balance').textContent = '$' + totalBalance.toFixed(2);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    empty?.classList.remove('hidden');
+    return;
+  }
+  empty?.classList.add('hidden');
+
+  list.innerHTML = filtered.map(g => {
+    const balance   = (g.amount||0) - (g.amountUsed||0);
+    const isUsed    = g.dateUsed || g.amountUsed > 0;
+    const rowBg     = isUsed ? 'background:rgba(200,230,197,0.15)' : '';
+    const balColor  = balance <= 0 ? 'color:#888' : 'color:#1a5252;font-weight:bold';
+    return `
+      <div class="grid items-center px-4 py-3 hover:bg-surface-container transition-colors text-sm gap-2" style="grid-template-columns:80px 90px 1fr 1fr 90px 90px 80px 80px 1fr auto;${rowBg}">
+        <span class="font-body text-on-surface-variant text-xs">${g.datePurchased||'—'}</span>
+        <span class="font-headline font-semibold text-on-surface text-xs">${g.serial||'—'}</span>
+        <span class="font-body text-on-surface text-xs truncate">${g.from||'—'}</span>
+        <span class="font-body text-on-surface text-xs truncate">${g.to||'—'}</span>
+        <span class="font-body text-on-surface-variant text-xs">${g.phone||'—'}</span>
+        <span class="font-body font-semibold text-primary text-xs">$${(g.amount||0).toFixed(2)}</span>
+        <span class="font-body text-on-surface-variant text-xs">${g.dateUsed||'—'}</span>
+        <span class="font-body text-xs" style="${balColor}">$${(g.amountUsed||0).toFixed(2)}</span>
+        <span class="font-body text-on-surface-variant text-xs truncate">${g.notes||''}</span>
+        <div class="flex gap-1">
+          <button onclick="showEditGiftCard('${g.id}')" class="w-7 h-7 rounded-full hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors">
+            <span class="material-symbols-outlined" style="font-size:15px">edit</span>
+          </button>
+          <button onclick="deleteGiftCard('${g.id}')" class="w-7 h-7 rounded-full hover:bg-error/10 flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+            <span class="material-symbols-outlined" style="font-size:15px">delete</span>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function exportGiftCardsSheets() {
+  try {
+    const proxy = `${SQUARE_PROXY.replace('/square', '')}/sheets`;
+    await fetch(proxy, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'saveGiftCards', giftCards }),
+    });
+  } catch(e) { /* silent */ }
+}
+
+
 let _deleteTxnId     = null;
 let _deleteTxnRecord = null;
 
