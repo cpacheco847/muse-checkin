@@ -1603,7 +1603,7 @@ const QUEUE_STORAGE_KEY = 'muse_live_queue';
 const QUEUE_DATE_KEY    = 'muse_live_queue_date';
 
 function saveQueueToStorage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   localStorage.setItem(QUEUE_DATE_KEY, today);
   localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue.map(e => ({
     ...e,
@@ -1614,7 +1614,7 @@ function saveQueueToStorage() {
 
 function loadQueueFromStorage() {
   const savedDate = localStorage.getItem(QUEUE_DATE_KEY);
-  const today     = new Date().toISOString().slice(0, 10);
+  const today     = todayStr();
   // Only restore if it was saved today — don't restore yesterday's queue
   if (savedDate !== today) {
     localStorage.removeItem(QUEUE_STORAGE_KEY);
@@ -1855,9 +1855,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ── Daily Midnight Reset ──────────────────────────
 function scheduleMidnightReset() {
-  const now = new Date();
-  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-  const msUntilMidnight = midnight - now;
+  const now    = new Date();
+  // Reset at 4:00:05 AM local time — well past midnight, avoids DST edge cases,
+  // and the salon is always closed by then
+  const reset  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 4, 0, 5);
+  // If 4am already passed today, schedule for 4am tomorrow
+  if (reset <= now) reset.setDate(reset.getDate() + 1);
+  const msUntil = reset - now;
+  const hrsUntil = (msUntil / 3600000).toFixed(1);
+  console.log(`[Reset] Scheduled for 4:00 AM — in ${hrsUntil}h (${reset.toLocaleString()})`);
   setTimeout(() => {
     // Archive today's queue to history before clearing
     archiveTodayQueue();
@@ -1891,11 +1897,11 @@ function scheduleMidnightReset() {
     renderTurns();
     showToast('New day started — yesterday\'s history saved to Reports');
     scheduleMidnightReset();
-  }, msUntilMidnight);
+  }, msUntil);
 }
 
 function archiveTodayQueue() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   const existing = JSON.parse(localStorage.getItem('muse_queue_archive') || '{}');
   existing[today] = queue.map(e => ({
     ...e,
@@ -1914,7 +1920,7 @@ let viewingHistoryDate = null;
 
 function loadQueueHistory(dateStr) {
   if (!dateStr) { clearQueueHistory(); return; }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   if (dateStr === today) { clearQueueHistory(); return; }
 
   const archive = JSON.parse(localStorage.getItem('muse_queue_archive') || '{}');
@@ -2519,7 +2525,7 @@ function showDashPanel(panel) {
   if (panel === 'giftcards')     renderGiftCards();
   if (panel === 'turns') {
     const di = document.getElementById('turns-history-date');
-    if (di && !di.value) di.value = new Date().toISOString().slice(0,10);
+    if (di && !di.value) di.value = todayStr();
     const bc = document.getElementById('turns-break-count');
     if (bc) bc.textContent = turnsBreakStaff.length;
     renderTurns();
@@ -3564,7 +3570,7 @@ function exportReportExcel() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `muse-report-${d.from.toISOString().slice(0,10)}.csv`;
+  a.download = `muse-report-${localDateStr(d.from)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Report downloaded as CSV (opens in Excel)');
@@ -4328,7 +4334,7 @@ function renderSchedule() {
       : `<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0"><span class="text-xs font-headline font-bold text-on-surface">${st.name.charAt(0).toUpperCase()}</span></div>`;
 
     const cells = dates.map(d => {
-      const key = d.toISOString().slice(0,10);
+      const key = localDateStr(d);
       const status = getScheduleStatus(key, st.id);
       const isRepeat = !scheduleData[key]?.[st.id] && scheduleData._repeats?.[st.id]?.[d.getDay()];
       const sColor = status ? SCHEDULE_COLORS[status] : null;
@@ -4496,7 +4502,7 @@ function getActiveTurnsOrder() {
 }
 
 function archiveTurnsForToday() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   turnsHistory[today] = {
     order: [...turnsTechOrder],
     snapshot: queue.map(e => ({
@@ -4573,6 +4579,19 @@ function getTechAllAssignments(techId) {
 // so all data automatically persists across app updates — no action needed.
 // This version stamp lets us detect future migrations if data schema changes.
 const APP_VERSION = '2026.06';
+
+// ── Local Date Helper ─────────────────────────────
+// Always use local date (not UTC) to avoid timezone shifts at end of day
+// e.g. 5pm Pacific = midnight UTC = wrong date with toISOString()
+function localDateStr(date) {
+  const d = date || new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function todayStr() { return localDateStr(new Date()); }
+
 function checkAppVersion() {
   const stored = localStorage.getItem('muse_app_version');
   if (stored !== APP_VERSION) {
@@ -4623,7 +4642,7 @@ function getTechTurns(techId) {
 
 
 function loadTurnsHistory(dateStr) {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   if (!dateStr || dateStr === today) { clearTurnsHistory(); return; }
   turnsViewingHistory = dateStr;
   document.getElementById('turns-today-btn')?.classList.remove('hidden');
@@ -4635,7 +4654,7 @@ function loadTurnsHistory(dateStr) {
 
 function clearTurnsHistory() {
   turnsViewingHistory = null;
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   const dateInput = document.getElementById('turns-history-date');
   if (dateInput) dateInput.value = today;
   document.getElementById('turns-today-btn')?.classList.add('hidden');
@@ -5520,7 +5539,7 @@ async function pushQueueToSheets() {
   setSheetsIndicator('syncing');
   try {
     const now        = new Date().toISOString();
-    const clientDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
+    const clientDate = todayStr(); // YYYY-MM-DD in local timezone
     const res = await fetch(SHEETS_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5548,8 +5567,13 @@ async function pushQueueToSheets() {
 // Load queue from Sheets — used on startup and by poller
 async function loadQueueFromSheets() {
   try {
-    const clientDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local timezone
-    const res  = await fetch(`${SHEETS_PROXY}?action=loadQueue&clientDate=${clientDate}&_=${Date.now()}`);
+    const clientDate = todayStr();
+    // Use POST to bypass Cloudflare GET caching entirely
+    const res  = await fetch(SHEETS_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'loadQueue', clientDate }),
+    });
     const data = await res.json();
     if (data.success) {
       return {
@@ -5600,7 +5624,7 @@ async function forceSyncNow() {
   setSheetsIndicator('syncing');
   console.log('[ForcSync] Starting manual sync, device:', DEVICE_ID, 'current queue:', queue.length);
   try {
-    const clientDate = new Date().toLocaleDateString('en-CA');
+    const clientDate = todayStr();
     const result = await loadQueueFromSheets();
     console.log('[ForceSync] Sheets result:', result ? `${result.queue.length} entries, updatedAt:${result.updatedAt}` : 'null');
     if (result) {
@@ -5651,7 +5675,7 @@ function setSheetsIndicator(state) {
 
 async function clearSheetsQueue() {
   try {
-    const clientDate = new Date().toLocaleDateString('en-CA');
+    const clientDate = todayStr();
     await fetch(SHEETS_PROXY, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5697,7 +5721,7 @@ function showDashPanelGiftCards() {
 function showAddGiftCard() {
   document.getElementById('gc-modal-title').textContent = 'New Gift Card';
   document.getElementById('gc-edit-id').value = '';
-  document.getElementById('gc-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('gc-date').value = todayStr();
   document.getElementById('gc-serial').value = '';
   document.getElementById('gc-amount').value = '';
   document.getElementById('gc-phone').value = '';
@@ -5997,7 +6021,7 @@ function exportAllData() {
   const blob = new Blob([json], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  const date = new Date().toISOString().slice(0, 10);
+  const date = todayStr();
   a.href     = url;
   a.download = `muse-backup-${date}.json`;
   a.click();
