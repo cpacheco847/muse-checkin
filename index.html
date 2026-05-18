@@ -368,7 +368,10 @@ tailwind.config = {
         <span class="sync-dot ok" id="sync-dot"></span>
         <span id="sync-label">Square synced</span>
       </div>
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant cursor-pointer hover:bg-surface-container-high transition-colors" style="height:32px" onclick="forceSyncNow()" title="Tap to force sync">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-xs font-body text-on-surface-variant cursor-pointer hover:bg-surface-container-high transition-colors select-none" style="height:32px"
+        onclick="forceSyncNow()"
+        oncontextmenu="event.preventDefault(); if(confirm('Push YOUR local queue up to Sheets? Only do this if your local data is correct and Sheets is wrong.')) { pushQueueToSheets(); showToast("Local queue pushed to Sheets"); }"
+        title="Tap to pull from Sheets · Right-click to push local queue up">
         <span class="sync-dot" id="sheets-sync-dot" style="background:#adb3b5"></span>
         <span id="sheets-sync-text">Sheets</span>
       </div>
@@ -1736,18 +1739,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (result) {
     console.log('[Sync] Loaded from Sheets:', result.queue.length, 'entries, updatedAt:', result.updatedAt);
-    // SAFETY: never replace a non-empty local queue with an empty Sheets response
-    // This prevents data loss if Sheets returns empty due to a parse error or wrong date
     if (result.queue.length > 0) {
-      queue = result.queue;
+      // Sheets has data — always use it on startup, it's the authority
+      queue = result.queue.map(e => ({
+        ...e,
+        checkinTime: e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime),
+      }));
       _lastSheetsUpdate = result.updatedAt;
       saveQueueToStorage();
       renderQueue();
       updateStats();
-    } else if (queue.length > 0) {
-      // Local has data but Sheets is empty — push local UP to Sheets to restore it
-      console.log('[Sync] Sheets empty but local has data — pushing local queue up');
-      pushQueueToSheets();
+    } else {
+      // Sheets is empty — keep local data as display but NEVER push it up automatically.
+      // A device with stale/old local data must not overwrite Sheets.
+      // The user can manually force-push by tapping the Sheets indicator if needed.
+      console.log('[Sync] Sheets empty — showing local data, not auto-pushing');
     }
   } else {
     console.warn('[Sync] Could not load from Sheets — using localStorage fallback');
@@ -5606,7 +5612,12 @@ async function pollSheets() {
     if (needsSync && !(result.queue.length === 0 && queue.length > 0)) {
       console.log('[Sync] Poll update — Sheets:', result.queue.length, 'local:', queue.length, 'newer:', isNewer);
       _lastSheetsUpdate = result.updatedAt || new Date().toISOString();
-      queue = result.queue;
+      // Ensure checkinTime is always a Date object (loadQueueFromSheets already does this,
+      // but belt-and-suspenders in case any path skips conversion)
+      queue = result.queue.map(e => ({
+        ...e,
+        checkinTime: e.checkinTime instanceof Date ? e.checkinTime : new Date(e.checkinTime),
+      }));
       saveQueueToStorage();
       renderQueue();
       updateStats();
