@@ -1702,18 +1702,37 @@ function scheduleMidnightReset() {
   const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
   const msUntilMidnight = midnight - now;
   setTimeout(() => {
+    // Archive today's queue to history before clearing
     archiveTodayQueue();
     archiveTurnsForToday();
+
+    // Save all today's entries as records so Reports tab can see them
+    queue.forEach(e => {
+      // Save even non-done entries so partial transactions appear in history
+      const existing = allRecords.findIndex(r => String(r.id) === String(e.id));
+      const snapshot = {
+        id: String(e.id), name: e.name, phone: e.phone||'',
+        services: e.services, assignments: e.assignments||[],
+        totalCost: e.totalCost||0,
+        checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
+        status: e.status, isAppointment: e.isAppointment||false,
+      };
+      if (existing >= 0) allRecords[existing] = snapshot;
+      else allRecords.push(snapshot);
+    });
+    localStorage.setItem('muse_records', JSON.stringify(allRecords));
+
+    // Clear the live queue for the new day
     turnsBreakStaff = [];
     saveTurnsBreak();
     queue = [];
     localStorage.removeItem(QUEUE_STORAGE_KEY);
     localStorage.removeItem(QUEUE_DATE_KEY);
-    clearSheetsQueue(); // clear queue in Sheets too
+    clearSheetsQueue();
     renderQueue();
     updateStats();
     renderTurns();
-    showToast('Queue and turns reset for new day');
+    showToast('New day started — yesterday\'s history saved to Reports');
     scheduleMidnightReset();
   }, msUntilMidnight);
 }
@@ -5222,18 +5241,19 @@ function scheduleSheetsSave() {
   _sheetsWriteTimer = setTimeout(pushQueueToSheets, 2000);
 }
 
-// Push full queue to Sheets
+// Push full queue to Sheets — always include clientDate so server uses our timezone
 async function pushQueueToSheets() {
-  // Always try to push — squareConfig is only needed for Square API, not Sheets sync
   setSheetsIndicator('syncing');
   try {
-    const now = new Date().toISOString();
+    const now        = new Date().toISOString();
+    const clientDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
     const res = await fetch(SHEETS_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'saveQueue',
         device: DEVICE_ID,
+        clientDate,
         queue: queue.map(e => ({
           ...e,
           checkinTime: e.checkinTime instanceof Date ? e.checkinTime.toISOString() : e.checkinTime,
@@ -5254,7 +5274,8 @@ async function pushQueueToSheets() {
 // Load queue from Sheets — used on startup and by poller
 async function loadQueueFromSheets() {
   try {
-    const res  = await fetch(`${SHEETS_PROXY}?action=loadQueue&_=${Date.now()}`);
+    const clientDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local timezone
+    const res  = await fetch(`${SHEETS_PROXY}?action=loadQueue&clientDate=${clientDate}&_=${Date.now()}`);
     const data = await res.json();
     if (data.success) {
       return {
@@ -5350,12 +5371,12 @@ function setSheetsIndicator(state) {
 }
 
 async function clearSheetsQueue() {
-  if (!squareConfig) return;
   try {
+    const clientDate = new Date().toLocaleDateString('en-CA');
     await fetch(SHEETS_PROXY, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'clearQueue' }),
+      body:    JSON.stringify({ action: 'clearQueue', clientDate }),
     });
   } catch(e) { /* silent */ }
 }
