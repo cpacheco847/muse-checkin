@@ -817,68 +817,65 @@ tailwind.config = {
         </div>
       </div>
 
+      <!-- ═══════════════════════════════════════════════
+           GIFT CARDS PANEL (inside dashboard)
+      ═══════════════════════════════════════════════ -->
+      <div id="panel-giftcards" class="dash-panel">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-xl font-headline font-bold text-on-surface">Gift Cards</h2>
+            <p class="text-sm font-body text-on-surface-variant mt-0.5">Track gift cards sold and redeemed</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportGiftCardsSheets()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface font-body font-semibold text-sm hover:bg-surface-container transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">upload</span> Sync to Sheets
+            </button>
+            <button onclick="showAddGiftCard()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
+              <span class="material-symbols-outlined" style="font-size:16px">add</span> New Gift Card
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary bar -->
+        <div class="grid grid-cols-4 gap-3 mb-5">
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-2xl font-headline font-extrabold text-primary" id="gc-total-sold">0</div>
+            <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Cards Sold</div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
+            <div class="text-2xl font-headline font-extrabold text-on-surface" id="gc-total-value">$0.00</div>
+            <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Total Value</div>
+          </div>
+          <div class="rounded-xl p-4 border text-center" style="background:rgba(200,230,197,0.2);border-color:rgba(42,122,79,0.3)">
+            <div class="text-2xl font-headline font-extrabold" style="color:#2a7a4f" id="gc-total-used">$0.00</div>
+            <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Amount Used</div>
+          </div>
+          <div class="rounded-xl p-4 border text-center" style="background:rgba(255,224,178,0.3);border-color:rgba(212,134,10,0.4)">
+            <div class="text-2xl font-headline font-extrabold" style="color:#a05000" id="gc-total-balance">$0.00</div>
+            <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Outstanding Balance</div>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="mb-4">
+          <input type="text" id="gc-search" placeholder="Search by serial #, name, phone, notes…"
+            oninput="renderGiftCards()"
+            class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-body focus:border-primary outline-none">
+        </div>
+
+        <!-- Card list -->
+        <div id="gc-list" class="space-y-2"></div>
+        <div id="gc-empty" class="hidden text-sm font-body text-on-surface-variant text-center py-12 bg-surface-container-lowest rounded-xl border border-surface-container-high">
+          <span class="material-symbols-outlined text-4xl block mb-2 opacity-40">card_giftcard</span>
+          No gift cards yet. Click <strong>New Gift Card</strong> to add one.
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     GIFT CARDS PANEL (inside dashboard)
-═══════════════════════════════════════════════ -->
-<div id="panel-giftcards" class="dash-panel">
-  <div class="flex items-center justify-between mb-5">
-    <div>
-      <h2 class="text-xl font-headline font-bold text-on-surface">Gift Cards</h2>
-      <p class="text-sm font-body text-on-surface-variant mt-0.5">Track gift cards sold and redeemed</p>
-    </div>
-    <div class="flex gap-2">
-      <button onclick="exportGiftCardsSheets()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
-        <span class="material-symbols-outlined" style="font-size:16px">upload</span> Sync to Sheets
-      </button>
-      <button onclick="showAddGiftCard()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-body font-semibold text-sm hover:bg-primary-dim transition-colors">
-        <span class="material-symbols-outlined" style="font-size:16px">add</span> New Gift Card
-      </button>
-    </div>
-  </div>
 
-  <!-- Summary bar -->
-  <div class="grid grid-cols-4 gap-3 mb-5">
-    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-      <div class="text-xl font-headline font-extrabold text-primary" id="gc-total-sold">0</div>
-      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Cards Sold</div>
-    </div>
-    <div class="bg-surface-container-lowest rounded-xl p-4 border border-surface-container-high text-center">
-      <div class="text-xl font-headline font-extrabold text-on-surface" id="gc-total-value">$0.00</div>
-      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Total Value</div>
-    </div>
-    <div class="rounded-xl p-4 border text-center" style="background:rgba(200,230,197,0.2);border-color:rgba(42,122,79,0.3)">
-      <div class="text-xl font-headline font-extrabold" style="color:#2a7a4f" id="gc-total-used">$0.00</div>
-      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Amount Used</div>
-    </div>
-    <div class="rounded-xl p-4 border text-center" style="background:rgba(255,224,178,0.3);border-color:rgba(212,134,10,0.4)">
-      <div class="text-xl font-headline font-extrabold" style="color:#a05000" id="gc-total-balance">$0.00</div>
-      <div class="text-[10px] font-body uppercase tracking-widest text-on-surface-variant mt-1">Outstanding Balance</div>
-    </div>
-  </div>
-
-  <!-- Search -->
-  <div class="mb-4">
-    <input type="text" id="gc-search" placeholder="Search by serial, name, phone…"
-      oninput="renderGiftCards()"
-      class="w-full border-2 border-surface-container-high bg-transparent rounded-xl px-4 py-2 text-sm font-body focus:border-primary outline-none">
-  </div>
-
-  <!-- Table header -->
-  <div class="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden">
-    <div class="grid text-[10px] font-body font-semibold text-on-surface-variant uppercase tracking-widest px-4 py-2 border-b border-surface-container-high"
-      style="grid-template-columns:80px 90px 1fr 1fr 90px 90px 80px 80px 1fr auto">
-      <span>Date</span><span>Serial #</span><span>From</span><span>To</span><span>Phone</span>
-      <span>Purchase Amt</span><span>Date Used</span><span>Amt Used</span><span>Notes</span><span></span>
-    </div>
-    <div id="gc-list" class="divide-y divide-surface-container-high"></div>
-    <div id="gc-empty" class="hidden text-sm font-body text-on-surface-variant text-center py-8">No gift cards yet. Click New Gift Card to add one.</div>
-  </div>
-</div>
-═══════════════════════════════════════════════ -->
 <!-- ═══════════════════════════════════════════════
      ADD / EDIT GIFT CARD MODAL
 ═══════════════════════════════════════════════ -->
@@ -2309,7 +2306,12 @@ function submitCheckin() {
   // Square: upsert only guests who aren't using same contact
   newEntries.forEach(e => { if (!e.skipSquare) squareUpsertCustomer(e); });
 
-  // Export to Google Sheets
+  // Save queue to localStorage AND push to Sheets immediately (not debounced)
+  // This is what makes other devices see the new check-in within 5 seconds
+  saveQueueToStorage();
+  pushQueueToSheets(); // immediate push, not debounced
+
+  // Export to Google Sheets (Check-Ins tab)
   newEntries.forEach(e => exportToSheets(e));
 
   // Show confirmation
@@ -2331,7 +2333,8 @@ function submitCheckin() {
 
 // ── Queue (Front Desk) ───────────────────────────
 function renderQueue() {
-  saveQueueToStorage(); // persist on every change
+  // NOTE: saveQueueToStorage is NOT called here — only call it when data actually changes
+  // (check-in, status change, assignment, remove). Calling it on render causes push/pull loops.
   const list = document.getElementById('queue-list');
   const empty = document.getElementById('queue-empty');
 
@@ -2461,6 +2464,8 @@ function updateStatus(id, status) {
   }
   if (entry.status === 'done') saveRecord(entry);
   updateSheetsRow(entry);
+  saveQueueToStorage();
+  scheduleSheetsSave();
   renderQueue();
   updateStats();
   renderTurns();
@@ -2468,6 +2473,8 @@ function updateStatus(id, status) {
 
 function removeFromQueue(id) {
   queue = queue.filter(e => String(e.id) !== String(id));
+  saveQueueToStorage();
+  scheduleSheetsSave();
   renderQueue();
   updateStats();
 }
@@ -2921,6 +2928,10 @@ function submitManualAdd() {
 
   newEntries.forEach(e => { if (!e.skipSquare) squareUpsertCustomer(e); });
   newEntries.forEach(e => exportToSheets(e));
+
+  // Save and push to Sheets immediately so other devices see new entries
+  saveQueueToStorage();
+  pushQueueToSheets();
 
   renderQueue();
   updateStats();
@@ -5587,9 +5598,13 @@ async function pollSheets() {
 // Start polling when the dashboard is open
 async function forceSyncNow() {
   setSheetsIndicator('syncing');
+  console.log('[ForcSync] Starting manual sync, device:', DEVICE_ID, 'current queue:', queue.length);
   try {
+    const clientDate = new Date().toLocaleDateString('en-CA');
     const result = await loadQueueFromSheets();
+    console.log('[ForceSync] Sheets result:', result ? `${result.queue.length} entries, updatedAt:${result.updatedAt}` : 'null');
     if (result) {
+      // Always accept on manual sync — ignore timestamp checks
       queue = result.queue;
       _lastSheetsUpdate = result.updatedAt;
       saveQueueToStorage();
@@ -5605,6 +5620,7 @@ async function forceSyncNow() {
   } catch(e) {
     setSheetsIndicator('error');
     showToast('Sync error: ' + e.message);
+    console.error('[ForceSync] Error:', e);
   }
 }
 
@@ -5789,26 +5805,61 @@ function renderGiftCards() {
 
   list.innerHTML = filtered.map(g => {
     const balance   = (g.amount||0) - (g.amountUsed||0);
-    const isUsed    = g.dateUsed || g.amountUsed > 0;
-    const rowBg     = isUsed ? 'background:rgba(200,230,197,0.15)' : '';
-    const balColor  = balance <= 0 ? 'color:#888' : 'color:#1a5252;font-weight:bold';
+    const isRedeemed = balance <= 0 && (g.dateUsed || g.amountUsed > 0);
+    const isPartial  = g.amountUsed > 0 && balance > 0;
+    const statusColor = isRedeemed
+      ? { bg:'rgba(200,230,197,0.2)', border:'#2a7a4f', label:'Redeemed', lc:'#2a7a4f' }
+      : isPartial
+        ? { bg:'rgba(255,224,178,0.2)', border:'#d4860a', label:'Partial',   lc:'#a05000' }
+        : { bg:'',                      border:'#c8d4d8', label:'Active',     lc:'#1a5252' };
+
+    const formatDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : null;
+
+    // Build info tokens for single-line display
+    const tokens = [];
+    if (g.serial)        tokens.push(`<span class="font-semibold text-on-surface">#${g.serial}</span>`);
+    if (g.datePurchased) tokens.push(`<span class="text-on-surface-variant">${formatDate(g.datePurchased)}</span>`);
+    if (g.from)          tokens.push(`<span>From: <span class="text-on-surface">${g.from}</span></span>`);
+    if (g.to)            tokens.push(`<span>To: <span class="text-on-surface">${g.to}</span></span>`);
+    if (g.phone)         tokens.push(`<span class="text-on-surface-variant">${g.phone}</span>`);
+    if (g.dateUsed)      tokens.push(`<span>Used: <span class="text-on-surface">${formatDate(g.dateUsed)}</span></span>`);
+    if (g.notes)         tokens.push(`<span class="text-on-surface-variant italic">${g.notes}</span>`);
+
+    const infoLine = tokens.join('<span class="text-outline mx-1">·</span>');
+
     return `
-      <div class="grid items-center px-4 py-3 hover:bg-surface-container transition-colors text-sm gap-2" style="grid-template-columns:80px 90px 1fr 1fr 90px 90px 80px 80px 1fr auto;${rowBg}">
-        <span class="font-body text-on-surface-variant text-xs">${g.datePurchased||'—'}</span>
-        <span class="font-headline font-semibold text-on-surface text-xs">${g.serial||'—'}</span>
-        <span class="font-body text-on-surface text-xs truncate">${g.from||'—'}</span>
-        <span class="font-body text-on-surface text-xs truncate">${g.to||'—'}</span>
-        <span class="font-body text-on-surface-variant text-xs">${g.phone||'—'}</span>
-        <span class="font-body font-semibold text-primary text-xs">$${(g.amount||0).toFixed(2)}</span>
-        <span class="font-body text-on-surface-variant text-xs">${g.dateUsed||'—'}</span>
-        <span class="font-body text-xs" style="${balColor}">$${(g.amountUsed||0).toFixed(2)}</span>
-        <span class="font-body text-on-surface-variant text-xs truncate">${g.notes||''}</span>
-        <div class="flex gap-1">
-          <button onclick="showEditGiftCard('${g.id}')" class="w-7 h-7 rounded-full hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors">
-            <span class="material-symbols-outlined" style="font-size:15px">edit</span>
+      <div class="rounded-xl border px-4 py-3 flex items-center gap-4" style="background:${statusColor.bg};border-color:${statusColor.border}">
+
+        <!-- Amount bubble — wide enough for 3 digits -->
+        <div class="flex-shrink-0 rounded-xl flex items-center justify-center font-headline font-extrabold text-2xl"
+          style="width:80px;height:56px;background:${statusColor.border}25;border:2px solid ${statusColor.border};color:${statusColor.lc}">
+          $${(g.amount||0).toFixed(0)}
+        </div>
+
+        <!-- Status badge -->
+        <div class="flex-shrink-0">
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full" style="background:${statusColor.border}20;color:${statusColor.lc}">${statusColor.label}</span>
+        </div>
+
+        <!-- Info line — fills remaining space -->
+        <div class="flex-grow min-w-0 text-sm font-body text-on-surface-variant truncate">${infoLine}</div>
+
+        <!-- Balance -->
+        <div class="flex-shrink-0 text-right">
+          <div class="text-xs text-on-surface-variant leading-none mb-0.5">Balance</div>
+          <div class="text-lg font-headline font-extrabold leading-none" style="color:${balance > 0 ? '#1a5252' : '#aaa'}">${'$' + balance.toFixed(2)}</div>
+          ${g.amountUsed > 0 ? `<div class="text-xs text-on-surface-variant mt-0.5">$${(g.amountUsed).toFixed(2)} used</div>` : ''}
+        </div>
+
+        <!-- Action buttons — large touch targets -->
+        <div class="flex-shrink-0 flex gap-2">
+          <button onclick="showEditGiftCard('${g.id}')" title="Edit"
+            class="w-11 h-11 rounded-xl bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors active:scale-95">
+            <span class="material-symbols-outlined" style="font-size:22px">edit</span>
           </button>
-          <button onclick="deleteGiftCard('${g.id}')" class="w-7 h-7 rounded-full hover:bg-error/10 flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
-            <span class="material-symbols-outlined" style="font-size:15px">delete</span>
+          <button onclick="deleteGiftCard('${g.id}')" title="Delete"
+            class="w-11 h-11 rounded-xl bg-surface-container hover:bg-error/15 flex items-center justify-center text-on-surface-variant hover:text-error transition-colors active:scale-95">
+            <span class="material-symbols-outlined" style="font-size:22px">delete</span>
           </button>
         </div>
       </div>`;
